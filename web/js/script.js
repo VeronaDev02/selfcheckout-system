@@ -149,7 +149,7 @@ async function connectCamera(id) {
                 // Verifica se a mensagem contém sdp (oferta SDP)
                 if (message.sdp && message.type === 'offer') {
                     await handleOffer(id, message, videoElement);
-                    statusElement.textContent = 'Conectado - Câmera';
+                    statusElement.textContent = `Conectado - Câmera ${id}`;
                 } else {
                     console.log(`Câmera ${id} recebeu mensagem:`, message);
                 }
@@ -215,7 +215,8 @@ function connectPDV(id) {
         
         // Adiciona mensagem de log inicial
         statusElement.textContent = 'Conectando PDV...';
-        logElement.textContent += `[INFO] Conectando ao PDV ${pdvIp}...\n`;
+        const lastTwoDigits = pdvIp.split('.').pop().padStart(3, '0').slice(-2);
+        logElement.textContent += `[INFO] Conectando ao PDV ${lastTwoDigits}...\n`;
         
     } catch (error) {
         console.error(`Erro ao conectar ao PDV ${id}:`, error);
@@ -249,9 +250,10 @@ function setupMessageHandler() {
                     const statusElement = document.getElementById(`status${quadranteId}`);
                     
                     if (message.success) {
-                        console.log(`Registrado com sucesso para o PDV ${pdvIp}`);
-                        statusElement.textContent = 'Conectado - PDV';
-                        logElement.textContent += `[INFO] Registrado no PDV ${pdvIp}\n`;
+                        const lastTwoDigits = pdvIp.split('.').pop().padStart(3, '0').slice(-2);
+                        console.log(`Registrado com sucesso para o PDV ${lastTwoDigits}`);
+                        statusElement.textContent = `Conectado - PDV ${lastTwoDigits}`;
+                        logElement.textContent += `[INFO] Registrado no PDV ${lastTwoDigits}\n`;
                     } else {
                         console.log(`Falha ao registrar para o PDV ${pdvIp}`);
                         statusElement.textContent = 'Falha - PDV';
@@ -320,10 +322,26 @@ async function handleOffer(id, offer, videoElement) {
             
             // Atualiza status na interface
             const statusElement = document.getElementById(`status${id}`);
-            if (state === 'connected' || state === 'completed') {
-                statusElement.textContent = 'Conectado - Câmera';
-            } else if (state === 'failed' || state === 'disconnected' || state === 'closed') {
-                statusElement.textContent = `Câmera: ${state}`;
+            
+            // Busca o IP do PDV associado a este quadrante
+            const associatedPdvIp = Object.keys(pdvMapping).find(ip => pdvMapping[ip] == id);
+            
+            if (associatedPdvIp) {
+                // Extrai os últimos dois dígitos do IP do PDV
+                const lastTwoDigits = associatedPdvIp.split('.').pop().padStart(3, '0').slice(-2);
+                
+                if (state === 'connected' || state === 'completed') {
+                    statusElement.textContent = `Conectado - PDV ${lastTwoDigits}`;
+                } else if (state === 'failed' || state === 'disconnected' || state === 'closed') {
+                    statusElement.textContent = `PDV ${lastTwoDigits}: ${state}`;
+                }
+            } else {
+                // Fallback caso não encontre o PDV associado
+                if (state === 'connected' || state === 'completed') {
+                    statusElement.textContent = 'Conectado';
+                } else if (state === 'failed' || state === 'disconnected' || state === 'closed') {
+                    statusElement.textContent = state;
+                }
             }
         };
         
