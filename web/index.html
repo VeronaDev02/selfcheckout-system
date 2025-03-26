@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Monitor de Câmeras e PDVs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="stream-grid">
+            <!-- Stream 1 -->
+            <div class="stream-container">
+                <div class="log-container" id="log1"></div>
+                <div class="video-container">
+                    <video id="remoteVideo1" autoplay playsinline controls muted></video>
+                    <div class="video-overlay" id="status1">Desconectado</div>
+                </div>
+            </div>
+            
+            <!-- Stream 2 -->
+            <div class="stream-container">
+                <div class="log-container" id="log2"></div>
+                <div class="video-container">
+                    <video id="remoteVideo2" autoplay playsinline controls muted></video>
+                    <div class="video-overlay" id="status2">Desconectado</div>
+                </div>
+            </div>
+            
+            <!-- Stream 3 -->
+            <div class="stream-container">
+                <div class="log-container" id="log3"></div>
+                <div class="video-container">
+                    <video id="remoteVideo3" autoplay playsinline controls muted></video>
+                    <div class="video-overlay" id="status3">Desconectado</div>
+                </div>
+            </div>
+            
+            <!-- Stream 4 -->
+            <div class="stream-container">
+                <div class="log-container" id="log4"></div>
+                <div class="video-container">
+                    <video id="remoteVideo4" autoplay playsinline controls muted></video>
+                    <div class="video-overlay" id="status4">Desconectado</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Novo botão para mostrar/esconder controles -->
+        <div class="toggle-controls" onclick="document.body.classList.toggle('controls-hidden')">
+            <div class="toggle-arrow"></div>
+        </div>
+        
+        <div class="input-section">
+            <div class="controls-content">
+                <!-- Controles do servidor -->
+                <div class="server-controls">
+                    <input type="text" id="serverAddress" placeholder="Endereço do Servidor" value="localhost:8080">
+                    <button onclick="connectToServer()">Conectar Servidor</button>
+                    <button onclick="disconnectFromServer()">Desconectar</button>
+                    <span id="serverStatus">Desconectado</span>
+                </div>
+                
+                <!-- Controles das câmeras e PDVs -->
+                <div class="controls-grid">
+                    <!-- Quadrante 1 -->
+                    <div class="controls-container">
+                        <div class="control-row">
+                            <input type="text" id="rtspUrl1" placeholder="RTSP URL 1" value="rtsp://exemplo/camera1">
+                            <button onclick="connectCamera(1)">Conectar Câmera 1</button>
+                        </div>
+                        <div class="control-row">
+                            <input type="text" id="pdvIp1" placeholder="IP do PDV 1" value="192.168.104.201">
+                            <button onclick="connectPDV(1)">Conectar PDV 1</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Quadrante 2 -->
+                    <div class="controls-container">
+                        <div class="control-row">
+                            <input type="text" id="rtspUrl2" placeholder="RTSP URL 2" value="rtsp://exemplo/camera2">
+                            <button onclick="connectCamera(2)">Conectar Câmera 2</button>
+                        </div>
+                        <div class="control-row">
+                            <input type="text" id="pdvIp2" placeholder="IP do PDV 2" value="192.168.104.205">
+                            <button onclick="connectPDV(2)">Conectar PDV 2</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Quadrante 3 -->
+                    <div class="controls-container">
+                        <div class="control-row">
+                            <input type="text" id="rtspUrl3" placeholder="RTSP URL 3" value="rtsp://exemplo/camera3">
+                            <button onclick="connectCamera(3)">Conectar Câmera 3</button>
+                        </div>
+                        <div class="control-row">
+                            <input type="text" id="pdvIp3" placeholder="IP do PDV 3" value="192.168.104.216">
+                            <button onclick="connectPDV(3)">Conectar PDV 3</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Quadrante 4 -->
+                    <div class="controls-container">
+                        <div class="control-row">
+                            <input type="text" id="rtspUrl4" placeholder="RTSP URL 4" value="rtsp://exemplo/camera4">
+                            <button onclick="connectCamera(4)">Conectar Câmera 4</button>
+                        </div>
+                        <div class="control-row">
+                            <input type="text" id="pdvIp4" placeholder="IP do PDV 4" value="192.168.104.218">
+                            <button onclick="connectPDV(4)">Conectar PDV 4</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/script.js"></script>
+</body>
+</html>
