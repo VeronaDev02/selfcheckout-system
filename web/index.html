@@ -2,12 +2,103 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Monitor de Câmeras e PDVs</title>
+    <title>Grupo Verona - Monitor de Câmeras e PDVs</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        // Script de tela cheia
+        let isFullscreen = false;
+        
+        // Função para alternar o modo de tela cheia
+        function toggleFullscreen() {
+            const container = document.querySelector('.container');
+            
+            if (!isFullscreen) {
+                enterFullscreen(container);
+            } else {
+                exitFullscreen();
+            }
+        }
+        
+        // Função para entrar no modo de tela cheia
+        function enterFullscreen(element) {
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.mozRequestFullScreen) { // Firefox
+                element.mozRequestFullScreen();
+            } else if (element.webkitRequestFullscreen) { // Chrome, Safari, Opera
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) { // IE/Edge
+                element.msRequestFullscreen();
+            }
+        }
+        
+        // Função para sair do modo de tela cheia
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) { // Firefox
+                document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) { // Chrome, Safari, Opera
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) { // IE/Edge
+                document.msExitFullscreen();
+            }
+        }
+        
+        // Atualiza o botão de tela cheia com base no estado atual
+        function updateFullscreenButton() {
+            const button = document.getElementById('fullscreenBtn');
+            
+            isFullscreen = !!document.fullscreenElement || 
+                        !!document.mozFullScreenElement || 
+                        !!document.webkitFullscreenElement || 
+                        !!document.msFullscreenElement;
+            
+            if (isFullscreen) {
+                button.innerHTML = '<span class="fullscreen-icon">⛶</span> Sair da Tela Cheia';
+            } else {
+                button.innerHTML = '<span class="fullscreen-icon">⛶</span> Tela Cheia';
+            }
+        }
+        
+        // Configura os listeners quando o documento estiver carregado
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar listeners para atualizar o botão quando o estado de tela cheia mudar
+            document.addEventListener('fullscreenchange', updateFullscreenButton);
+            document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+            document.addEventListener('mozfullscreenchange', updateFullscreenButton);
+            document.addEventListener('MSFullscreenChange', updateFullscreenButton);
+            
+            // Listener para a tecla Escape (para sair da tela cheia)
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && isFullscreen) {
+                    exitFullscreen();
+                }
+            });
+        });
+    </script>
 </head>
 <body>
     <div class="container">
+        <header class="top-header">
+            <div class="logo-container">
+                <img src="imgs/verona_logo.png" alt="Logo Grupo Verona" class="logo">
+                <div class="brand-text">
+                    <span class="grupo">Grupo</span>
+                    <span class="verona">Verona</span>
+                </div>
+            </div>
+            <div class="page-title">Monitor de Câmeras e PDVs</div>
+            <button id="fullscreenBtn" class="fullscreen-btn" onclick="toggleFullscreen()">
+                <span class="fullscreen-icon">⛶</span> Tela Cheia
+            </button>
+        </header>
+
         <div class="stream-grid">
             <!-- Stream 1 -->
             <div class="stream-container">
@@ -46,7 +137,7 @@
             </div>
         </div>
         
-        <!-- Novo botão para mostrar/esconder controles -->
+        <!-- Botão para mostrar/esconder controles -->
         <div class="toggle-controls" onclick="document.body.classList.toggle('controls-hidden')">
             <div class="toggle-arrow"></div>
         </div>
@@ -66,7 +157,7 @@
                     <!-- Quadrante 1 -->
                     <div class="controls-container">
                         <div class="control-row">
-                            <input type="text" id="rtspUrl1" placeholder="RTSP URL 1" value="rtsp://exemplo/camera1">
+                            <input type="text" id="rtspUrl1" placeholder="RTSP URL 1" value="">
                             <button onclick="connectCamera(1)">Conectar Câmera 1</button>
                         </div>
                         <div class="control-row">
@@ -78,7 +169,7 @@
                     <!-- Quadrante 2 -->
                     <div class="controls-container">
                         <div class="control-row">
-                            <input type="text" id="rtspUrl2" placeholder="RTSP URL 2" value="rtsp://exemplo/camera2">
+                            <input type="text" id="rtspUrl2" placeholder="RTSP URL 2" value="">
                             <button onclick="connectCamera(2)">Conectar Câmera 2</button>
                         </div>
                         <div class="control-row">
@@ -90,7 +181,7 @@
                     <!-- Quadrante 3 -->
                     <div class="controls-container">
                         <div class="control-row">
-                            <input type="text" id="rtspUrl3" placeholder="RTSP URL 3" value="rtsp://exemplo/camera3">
+                            <input type="text" id="rtspUrl3" placeholder="RTSP URL 3" value="">
                             <button onclick="connectCamera(3)">Conectar Câmera 3</button>
                         </div>
                         <div class="control-row">
@@ -102,7 +193,7 @@
                     <!-- Quadrante 4 -->
                     <div class="controls-container">
                         <div class="control-row">
-                            <input type="text" id="rtspUrl4" placeholder="RTSP URL 4" value="rtsp://exemplo/camera4">
+                            <input type="text" id="rtspUrl4" placeholder="RTSP URL 4" value="">
                             <button onclick="connectCamera(4)">Conectar Câmera 4</button>
                         </div>
                         <div class="control-row">
