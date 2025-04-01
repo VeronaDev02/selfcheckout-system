@@ -185,7 +185,7 @@ function connectPDV(id) {
     }
     
     const pdvIp = document.getElementById(`pdvIp${id}`).value;
-    const logElement = document.getElementById(`log${id}`);
+    const logContainer = document.getElementById(`log${id}`);
     const statusElement = document.getElementById(`status${id}`);
     
     // Verifica se o IP é válido
@@ -194,8 +194,20 @@ function connectPDV(id) {
         return;
     }
     
-    // Limpa o log ao reconectar
-    logElement.textContent = '';
+    // Configura o elemento de conteúdo interno para o log, se ainda não existir
+    let logContent = logContainer.querySelector('.log-content');
+    if (!logContent) {
+        logContent = document.createElement('div');
+        logContent.className = 'log-content';
+        // Move o conteúdo existente para o novo elemento
+        logContent.textContent = logContainer.textContent;
+        // Limpa o container original e adiciona o novo elemento
+        logContainer.textContent = '';
+        logContainer.appendChild(logContent);
+    } else {
+        // Limpa o log ao reconectar
+        logContent.textContent = '';
+    }
     
     // Registra o mapeamento deste quadrante para este IP de PDV
     pdvMapping[pdvIp] = id;
@@ -216,11 +228,11 @@ function connectPDV(id) {
         // Adiciona mensagem de log inicial
         statusElement.textContent = 'Conectando PDV...';
         const lastTwoDigits = pdvIp.split('.').pop().padStart(3, '0').slice(-2);
-        logElement.textContent += `[INFO] Conectando ao PDV ${lastTwoDigits}...\n`;
+        logContent.textContent += `[INFO] Conectando ao PDV ${lastTwoDigits}...\n`;
         
     } catch (error) {
         console.error(`Erro ao conectar ao PDV ${id}:`, error);
-        logElement.textContent += '[ERRO] Falha na conexão com o PDV\n';
+        logContent.textContent += '[ERRO] Falha na conexão com o PDV\n';
         statusElement.textContent = 'Erro PDV';
     }
 }
@@ -228,6 +240,22 @@ function connectPDV(id) {
 // Handler centralizado para mensagens do servidor PDV
 function setupMessageHandler() {
     if (!serverConnection) return;
+    
+    // Primeiro, garantimos que cada log-container tenha um elemento interno para o conteúdo
+    for (let i = 1; i <= 4; i++) {
+        const logContainer = document.getElementById(`log${i}`);
+        // Verifica se já existe um elemento interno para o conteúdo
+        if (!logContainer.querySelector('.log-content')) {
+            // Cria um elemento div para conter o conteúdo do log
+            const logContent = document.createElement('div');
+            logContent.className = 'log-content';
+            // Move o conteúdo existente para o novo elemento
+            logContent.textContent = logContainer.textContent;
+            // Limpa o container original e adiciona o novo elemento
+            logContainer.textContent = '';
+            logContainer.appendChild(logContent);
+        }
+    }
     
     // Remove handler anterior, se existir
     if (serverConnection.onmessage) {
@@ -246,18 +274,19 @@ function setupMessageHandler() {
                 const quadranteId = pdvMapping[pdvIp];
                 
                 if (quadranteId) {
-                    const logElement = document.getElementById(`log${quadranteId}`);
+                    const logContainer = document.getElementById(`log${quadranteId}`);
+                    const logContent = logContainer.querySelector('.log-content') || logContainer;
                     const statusElement = document.getElementById(`status${quadranteId}`);
                     
                     if (message.success) {
                         const lastTwoDigits = pdvIp.split('.').pop().padStart(3, '0').slice(-2);
                         console.log(`Registrado com sucesso para o PDV ${lastTwoDigits}`);
                         statusElement.textContent = `Conectado - PDV ${lastTwoDigits}`;
-                        logElement.textContent += `[INFO] Registrado no PDV ${lastTwoDigits}\n`;
+                        logContent.textContent += `[INFO] Registrado no PDV ${lastTwoDigits}\n`;
                     } else {
                         console.log(`Falha ao registrar para o PDV ${pdvIp}`);
                         statusElement.textContent = 'Falha - PDV';
-                        logElement.textContent += `[ERRO] Falha ao registrar no PDV ${pdvIp}\n`;
+                        logContent.textContent += `[ERRO] Falha ao registrar no PDV ${pdvIp}\n`;
                     }
                 }
             }
@@ -267,17 +296,18 @@ function setupMessageHandler() {
                 const quadranteId = pdvMapping[pdvIp];
                 
                 if (quadranteId) {
-                    const logElement = document.getElementById(`log${quadranteId}`);
+                    const logContainer = document.getElementById(`log${quadranteId}`);
+                    const logContent = logContainer.querySelector('.log-content') || logContainer;
                     
                     // Formata a data/hora atual
                     const now = new Date();
                     const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
                     
                     // Adiciona a mensagem ao log
-                    logElement.textContent += `[${timestamp}] ${message.data}\n`;
+                    logContent.textContent += `[${timestamp}] ${message.data}\n`;
                     
                     // Mantém o scroll no final do log
-                    logElement.scrollTop = logElement.scrollHeight;
+                    logContent.scrollTop = logContent.scrollHeight;
                     
                     console.log(`Mensagem do PDV ${pdvIp} exibida no quadrante ${quadranteId}`);
                 } else {
