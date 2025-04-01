@@ -331,3 +331,218 @@ Para adicionar novos recursos:
 - **Novos utilitários**: Adicione em `js/utils/` para funcionalidades reutilizáveis
 
 A estrutura modular facilita a manutenção e a extensão, permitindo que novos desenvolvedores trabalhem em módulos específicos sem interferir no funcionamento geral da aplicação.
+
+# Documentação do Backend SelfCheckout
+
+## Visão Geral
+
+O backend do SelfCheckout é um servidor unificado escrito em Python que integra múltiplos serviços para monitoramento de PDVs (Pontos de Venda) e transmissão de vídeo RTSP. O sistema consiste em três componentes principais:
+
+1. **Servidor WebSocket para PDV**: Gerencia conexões com clientes web que monitoram os PDVs
+2. **Servidor WebSocket para RTSP/WebRTC**: Converte streams RTSP para WebRTC para visualização em navegadores
+3. **Servidor UDP**: Recebe e processa dados enviados pelos terminais PDV em tempo real
+
+A arquitetura permite o monitoramento simultâneo de múltiplos PDVs e câmeras, com detecção inteligente de inatividade e otimização de recursos.
+
+## Estrutura de Arquivos
+
+```
+/
+├── main.py                       # Ponto de entrada principal
+├── message_processor.py          # Processamento de mensagens PDV
+├── pdv_transaction.py            # Monitoramento de transações PDV
+├── rtsp_connection.py            # Gerenciamento de conexões RTSP
+└── webrtc_conversion.py          # Conversão RTSP para WebRTC
+```
+
+## Módulos e Componentes
+
+### `main.py`
+
+**Função**: Ponto de entrada principal do servidor unificado
+
+**Responsabilidades**:
+- Iniciação e configuração dos servidores WebSocket e UDP
+- Gerenciamento de clientes WebSocket por IP de PDV
+- Roteamento de mensagens entre PDVs e clientes web
+- Configuração do servidor RTSP/WebRTC
+- Processamento de argumentos de linha de comando
+
+**Classes Principais**:
+- `UnifiedServer`: Classe central que integra todos os componentes
+
+**Métodos Importantes**:
+- `register_pdv_client()`: Registra um cliente para receber mensagens de um PDV
+- `unregister_pdv_client()`: Remove um cliente da lista de registros
+- `pdv_websocket_handler()`: Gerencia conexões WebSocket para o monitoramento de PDV
+- `rtsp_websocket_handler()`: Gerencia conexões WebSocket para streams de vídeo
+- `start_udp_server()`: Inicia servidor UDP que recebe dados dos PDVs
+- `start()`: Inicia todos os serviços
+
+### `message_processor.py`
+
+**Função**: Processamento e formatação de mensagens recebidas dos PDVs
+
+**Responsabilidades**:
+- Limpeza e formatação das mensagens PDV
+- Remoção de caracteres de controle e formatação excessiva
+- Processamento de tipos específicos de mensagens
+
+**Métodos Importantes**:
+- `process_message()`: Processa uma mensagem bruta do PDV para torná-la mais legível
+
+### `pdv_transaction.py`
+
+**Função**: Monitoramento de transações PDV e detecção de inatividade
+
+**Responsabilidades**:
+- Detecção de início e fim de transações
+- Monitoramento de atividade durante transações
+- Geração de alertas de timeout por inatividade
+- Rastreamento do estado de cada PDV
+
+**Classes Principais**:
+- `PDVTransaction`: Gerencia o estado e monitoramento das transações PDV
+
+**Métodos Importantes**:
+- `is_transaction_start()`: Detecta início de uma transação
+- `is_transaction_end()`: Detecta fim de uma transação
+- `reset_pdv_state()`: Reinicia o estado de um PDV
+- `timeout_checker()`: Verifica inatividade e gera alertas
+- `process_pdv_message()`: Processa mensagens do PDV para monitorar atividade
+
+### `rtsp_connection.py`
+
+**Função**: Gerenciamento de conexões com câmeras RTSP
+
+**Responsabilidades**:
+- Estabelecimento de conexões com streams RTSP
+- Leitura de frames de vídeo
+- Gerenciamento do ciclo de vida da conexão
+
+**Classes Principais**:
+- `RTSPConnection`: Encapsula a conexão com uma câmera RTSP
+
+**Métodos Importantes**:
+- `connect()`: Estabelece conexão com o stream RTSP
+- `read_frame()`: Lê um frame do stream
+- `close()`: Encerra a conexão
+
+### `webrtc_conversion.py`
+
+**Função**: Conversão de streams RTSP para WebRTC
+
+**Responsabilidades**:
+- Captura otimizada de frames RTSP
+- Conversão para formato compatível com WebRTC
+- Gerenciamento de conexões peer-to-peer
+- Otimização de desempenho (redução de qualidade, taxa de frames, etc.)
+
+**Classes Principais**:
+- `FrameGrabber`: Thread dedicada para captura eficiente de frames
+- `VideoStreamTrack`: Track de mídia para WebRTC
+- `WebRTCConversion`: Gerenciamento da conversão e conexão WebRTC
+
+**Métodos Importantes**:
+- `connect()`: Estabelece conexão RTSP e configura WebRTC
+- `create_offer()`: Cria oferta SDP para negociação WebRTC
+- `process_answer()`: Processa a resposta SDP do cliente
+- `close()`: Encerra conexões e libera recursos
+
+## Funcionalidades Principais
+
+### Monitoramento de PDVs
+- Recebe mensagens UDP dos PDVs em tempo real
+- Processa e formata mensagens para exibição
+- Encaminha mensagens para clientes web registrados
+- Associa clientes web a endereços IP específicos de PDV
+
+### Detecção de Inatividade
+- Monitora o início e fim das transações
+- Detecta períodos de inatividade durante transações
+- Notifica clientes web quando um PDV fica inativo por muito tempo
+- Configura tempo limite para inatividade (padrão: 180 segundos)
+
+### Transmissão de Vídeo
+- Converte streams RTSP para WebRTC compatível com navegadores
+- Gerencia negociação de conexões peer-to-peer
+- Otimiza uso de CPU e rede (redução de resolução, frames, etc.)
+- Suporta múltiplas câmeras simultâneas
+
+### Arquitetura Assíncrona
+- Utiliza `asyncio` para operações não-bloqueantes
+- Gerencia múltiplas conexões concorrentemente
+- Implementa operações de timeout e cancelamento
+- Utiliza threads para processamento intensivo (captura de frames)
+
+## Tecnologias Utilizadas
+
+- **Python 3.x**: Linguagem principal
+- **asyncio**: Para operações assíncronas e não-bloqueantes
+- **websockets**: Implementação de servidor WebSocket
+- **aiortc**: Implementação WebRTC em Python
+- **OpenCV (cv2)**: Para processamento de vídeo e conexão RTSP
+- **PyAV**: Para manipulação de frames e codecs
+- **UDP Sockets**: Para recebimento de mensagens PDV
+
+## Parâmetros de Configuração
+
+O servidor aceita os seguintes parâmetros de linha de comando:
+
+- `--ws-port`: Porta do servidor WebSocket para PDV (padrão: 8765)
+- `--rtsp-ws-port`: Porta do servidor WebSocket para RTSP (padrão: 8080)
+- `--udp-port`: Porta do servidor UDP (padrão: 38800)
+- `--pdv-timeout`: Tempo de timeout para inatividade do PDV em segundos (padrão: 180)
+
+## Otimizações de Desempenho
+
+### RTSP/WebRTC
+- Redução da resolução de vídeo (fator de escala configurável)
+- Pulo de frames para reduzir carga de CPU
+- Compressão de qualidade de imagem
+- Filas de frames com tamanho limitado
+- Thread dedicada para captura de frames
+
+### Servidor UDP
+- Operações não-bloqueantes
+- Processamento otimizado de mensagens
+- Roteamento eficiente para clientes interessados
+
+## Considerações de Deploy
+
+- O servidor requer Python 3.7+ com todas as dependências instaladas
+- Para melhor desempenho, recomenda-se hardware com múltiplos núcleos
+- Câmeras RTSP devem estar acessíveis na mesma rede ou via VPN
+- Os PDVs devem ser configurados para enviar dados UDP para a porta especificada
+- Considere requisitos de firewall para as portas UDP e WebSocket
+
+## Fluxo de Dados
+
+1. **PDV → Servidor UDP**: Envio de mensagens de transação em tempo real
+2. **Servidor UDP → Processador de Mensagens**: Limpeza e formatação das mensagens
+3. **Processador de Mensagens → Monitor de Transações**: Detecção de inatividade
+4. **Monitor de Transações → Servidor WebSocket**: Alerta de inatividade quando necessário
+5. **Servidor WebSocket → Cliente Web**: Entrega de mensagens e alertas em tempo real
+6. **Câmera RTSP → RTSP Connection**: Captura de frames de vídeo
+7. **RTSP Connection → WebRTC Conversion**: Conversão para formato WebRTC
+8. **WebRTC Conversion → Cliente Web**: Streaming de vídeo via WebRTC
+
+## Segurança
+
+- O servidor não implementa autenticação por padrão
+- Em ambientes de produção, considere adicionar:
+  - Autenticação para conexões WebSocket
+  - TLS/SSL para conexões WebSocket
+  - Filtragem de IPs para conexões UDP
+  - RTSP com credenciais para câmeras
+
+## Manutenção e Extensão
+
+Para adicionar novos recursos:
+
+- **Novos PDVs**: Adicione os IPs ao dicionário `pdv_clients` em `main.py`
+- **Otimizações de vídeo**: Ajuste os parâmetros em `WebRTCConversion` e `FrameGrabber`
+- **Processamento personalizado**: Estenda `process_message()` em `message_processor.py`
+- **Detecção de eventos**: Adicione lógica à classe `PDVTransaction`
+
+A estrutura modular facilita a manutenção e a extensão do sistema.
