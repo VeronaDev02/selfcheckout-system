@@ -1,5 +1,0 @@
-aiortc==1.10.1
-av==13.1.0
-numpy==2.2.4
-opencv_python==4.11.0.86
-websockets==15.0.1

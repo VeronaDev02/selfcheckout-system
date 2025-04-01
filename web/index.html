@@ -2,205 +2,119 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Grupo Verona - Monitor de Câmeras e PDVs</title>
+    <title>Monitor de Câmeras e PDVs</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
-    
-    <script>
-        // Script de tela cheia
-        let isFullscreen = false;
-        
-        // Função para alternar o modo de tela cheia
-        function toggleFullscreen() {
-            const container = document.querySelector('.container');
-            
-            if (!isFullscreen) {
-                enterFullscreen(container);
-            } else {
-                exitFullscreen();
-            }
-        }
-        
-        // Função para entrar no modo de tela cheia
-        function enterFullscreen(element) {
-            if (element.requestFullscreen) {
-                element.requestFullscreen();
-            } else if (element.mozRequestFullScreen) { // Firefox
-                element.mozRequestFullScreen();
-            } else if (element.webkitRequestFullscreen) { // Chrome, Safari, Opera
-                element.webkitRequestFullscreen();
-            } else if (element.msRequestFullscreen) { // IE/Edge
-                element.msRequestFullscreen();
-            }
-        }
-        
-        // Função para sair do modo de tela cheia
-        function exitFullscreen() {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.mozCancelFullScreen) { // Firefox
-                document.mozCancelFullScreen();
-            } else if (document.webkitExitFullscreen) { // Chrome, Safari, Opera
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) { // IE/Edge
-                document.msExitFullscreen();
-            }
-        }
-        
-        // Atualiza o botão de tela cheia com base no estado atual
-        function updateFullscreenButton() {
-            const button = document.getElementById('fullscreenBtn');
-            
-            isFullscreen = !!document.fullscreenElement || 
-                        !!document.mozFullScreenElement || 
-                        !!document.webkitFullscreenElement || 
-                        !!document.msFullscreenElement;
-            
-            if (isFullscreen) {
-                button.innerHTML = '<span class="fullscreen-icon">⛶</span> Sair da Tela Cheia';
-            } else {
-                button.innerHTML = '<span class="fullscreen-icon">⛶</span> Tela Cheia';
-            }
-        }
-        
-        // Configura os listeners quando o documento estiver carregado
-        document.addEventListener('DOMContentLoaded', function() {
-            // Configurar listeners para atualizar o botão quando o estado de tela cheia mudar
-            document.addEventListener('fullscreenchange', updateFullscreenButton);
-            document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
-            document.addEventListener('mozfullscreenchange', updateFullscreenButton);
-            document.addEventListener('MSFullscreenChange', updateFullscreenButton);
-            
-            // Listener para a tecla Escape (para sair da tela cheia)
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && isFullscreen) {
-                    exitFullscreen();
-                }
-            });
-        });
-    </script>
 </head>
 <body>
     <div class="container">
-        <header class="top-header">
+        <!-- Header similar to FXML -->
+        <div class="header">
             <div class="logo-container">
-                <img src="imgs/verona_logo.png" alt="Logo Grupo Verona" class="logo">
+                <img src="imgs/verona_logo.png" alt="Verona Logo" class="logo">
                 <div class="brand-text">
-                    <span class="grupo">Grupo</span>
-                    <span class="verona">Verona</span>
+                    <div class="grupo-text">Grupo</div>
+                    <div class="verona-text">Verona</div>
                 </div>
             </div>
-            <div class="page-title">Monitor de Câmeras e PDVs</div>
-            <button id="fullscreenBtn" class="fullscreen-btn" onclick="toggleFullscreen()">
-                <span class="fullscreen-icon">⛶</span> Tela Cheia
-            </button>
-        </header>
-
-        <div class="stream-grid">
+            <div class="title">Monitor de Câmeras e PDVs</div>
+            <button id="fullscreenBtn" class="fullscreen-btn">[ ] Tela Cheia</button>
+        </div>
+        
+        <!-- Main Grid with 4 quadrants -->
+        <div class="stream-grid" id="mainGrid">
             <!-- Stream 1 -->
-            <div class="stream-container">
+            <div class="stream-container" id="quadrant1">
                 <div class="log-container" id="log1"></div>
                 <div class="video-container">
-                    <video id="remoteVideo1" autoplay playsinline controls muted></video>
+                    <video id="remoteVideo1" autoplay playsinline muted></video>
                     <div class="video-overlay" id="status1">Desconectado</div>
                 </div>
             </div>
             
             <!-- Stream 2 -->
-            <div class="stream-container">
+            <div class="stream-container" id="quadrant2">
                 <div class="log-container" id="log2"></div>
                 <div class="video-container">
-                    <video id="remoteVideo2" autoplay playsinline controls muted></video>
+                    <video id="remoteVideo2" autoplay playsinline muted></video>
                     <div class="video-overlay" id="status2">Desconectado</div>
                 </div>
             </div>
             
             <!-- Stream 3 -->
-            <div class="stream-container">
+            <div class="stream-container" id="quadrant3">
                 <div class="log-container" id="log3"></div>
                 <div class="video-container">
-                    <video id="remoteVideo3" autoplay playsinline controls muted></video>
+                    <video id="remoteVideo3" autoplay playsinline muted></video>
                     <div class="video-overlay" id="status3">Desconectado</div>
                 </div>
             </div>
             
             <!-- Stream 4 -->
-            <div class="stream-container">
+            <div class="stream-container" id="quadrant4">
                 <div class="log-container" id="log4"></div>
                 <div class="video-container">
-                    <video id="remoteVideo4" autoplay playsinline controls muted></video>
+                    <video id="remoteVideo4" autoplay playsinline muted></video>
                     <div class="video-overlay" id="status4">Desconectado</div>
                 </div>
             </div>
         </div>
         
-        <!-- Botão para mostrar/esconder controles -->
-        <div class="toggle-controls" onclick="document.body.classList.toggle('controls-hidden')">
-            <div class="toggle-arrow"></div>
+        <!-- Server connection controls -->
+        <div class="server-controls-container">
+            <button id="toggleServerControls" class="toggle-server-controls">↑ Servidor</button>
+            <div class="server-controls" id="serverControlsPanel">
+                <input type="text" id="serverAddress" placeholder="Endereço do Servidor" value="localhost:8080">
+                <button onclick="connectToServer()">Conectar Servidor</button>
+                <button onclick="disconnectFromServer()">Desconectar</button>
+                <span id="serverStatus">Desconectado</span>
+            </div>
         </div>
         
-        <div class="input-section">
-            <div class="controls-content">
-                <!-- Controles do servidor -->
-                <div class="server-controls">
-                    <input type="text" id="serverAddress" placeholder="Endereço do Servidor" value="localhost:8080">
-                    <button onclick="connectToServer()">Conectar Servidor</button>
-                    <button onclick="disconnectFromServer()">Desconectar</button>
-                    <span id="serverStatus">Desconectado</span>
+        <!-- Toggle button for connection controls -->
+        <div class="toggle-connection-container">
+            <button id="toggleConnectionControls" class="toggle-connection-controls">↓ Mostrar Controles</button>
+        </div>
+        
+        <!-- Footer with connection controls similar to FXML -->
+        <div id="connectionControlsPanel" class="footer">
+            <!-- Row 1 - RTSP URLs -->
+            <div class="connection-row">
+                <div class="connection-item">
+                    <input type="text" id="rtspUrl1" class="connection-input" placeholder="RTSP URL 1" value="rtsp://exemplo/camera1">
+                    <button onclick="connectCamera(1)" class="connect-button">Conectar</button>
                 </div>
-                
-                <!-- Controles das câmeras e PDVs -->
-                <div class="controls-grid">
-                    <!-- Quadrante 1 -->
-                    <div class="controls-container">
-                        <div class="control-row">
-                            <input type="text" id="rtspUrl1" placeholder="RTSP URL 1" value="">
-                            <button onclick="connectCamera(1)">Conectar Câmera 1</button>
-                        </div>
-                        <div class="control-row">
-                            <input type="text" id="pdvIp1" placeholder="IP do PDV 1" value="192.168.104.201">
-                            <button onclick="connectPDV(1)">Conectar PDV 1</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Quadrante 2 -->
-                    <div class="controls-container">
-                        <div class="control-row">
-                            <input type="text" id="rtspUrl2" placeholder="RTSP URL 2" value="">
-                            <button onclick="connectCamera(2)">Conectar Câmera 2</button>
-                        </div>
-                        <div class="control-row">
-                            <input type="text" id="pdvIp2" placeholder="IP do PDV 2" value="192.168.104.205">
-                            <button onclick="connectPDV(2)">Conectar PDV 2</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Quadrante 3 -->
-                    <div class="controls-container">
-                        <div class="control-row">
-                            <input type="text" id="rtspUrl3" placeholder="RTSP URL 3" value="">
-                            <button onclick="connectCamera(3)">Conectar Câmera 3</button>
-                        </div>
-                        <div class="control-row">
-                            <input type="text" id="pdvIp3" placeholder="IP do PDV 3" value="192.168.104.216">
-                            <button onclick="connectPDV(3)">Conectar PDV 3</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Quadrante 4 -->
-                    <div class="controls-container">
-                        <div class="control-row">
-                            <input type="text" id="rtspUrl4" placeholder="RTSP URL 4" value="">
-                            <button onclick="connectCamera(4)">Conectar Câmera 4</button>
-                        </div>
-                        <div class="control-row">
-                            <input type="text" id="pdvIp4" placeholder="IP do PDV 4" value="192.168.104.218">
-                            <button onclick="connectPDV(4)">Conectar PDV 4</button>
-                        </div>
-                    </div>
+                <div class="connection-item">
+                    <input type="text" id="rtspUrl2" class="connection-input" placeholder="RTSP URL 2" value="rtsp://exemplo/camera2">
+                    <button onclick="connectCamera(2)" class="connect-button">Conectar</button>
+                </div>
+                <div class="connection-item">
+                    <input type="text" id="rtspUrl3" class="connection-input" placeholder="RTSP URL 3" value="rtsp://exemplo/camera3">
+                    <button onclick="connectCamera(3)" class="connect-button">Conectar</button>
+                </div>
+                <div class="connection-item">
+                    <input type="text" id="rtspUrl4" class="connection-input" placeholder="RTSP URL 4" value="rtsp://exemplo/camera4">
+                    <button onclick="connectCamera(4)" class="connect-button">Conectar</button>
+                </div>
+            </div>
+            
+            <!-- Row 2 - PDV IPs -->
+            <div class="connection-row">
+                <div class="connection-item">
+                    <input type="text" id="pdvIp1" class="connection-input" placeholder="IP do PDV 1" value="192.168.104.201">
+                    <button onclick="connectPDV(1)" class="connect-button">Conectar</button>
+                </div>
+                <div class="connection-item">
+                    <input type="text" id="pdvIp2" class="connection-input" placeholder="IP do PDV 2" value="192.168.104.205">
+                    <button onclick="connectPDV(2)" class="connect-button">Conectar</button>
+                </div>
+                <div class="connection-item">
+                    <input type="text" id="pdvIp3" class="connection-input" placeholder="IP do PDV 3" value="192.168.104.216">
+                    <button onclick="connectPDV(3)" class="connect-button">Conectar</button>
+                </div>
+                <div class="connection-item">
+                    <input type="text" id="pdvIp4" class="connection-input" placeholder="IP do PDV 4" value="192.168.104.218">
+                    <button onclick="connectPDV(4)" class="connect-button">Conectar</button>
                 </div>
             </div>
         </div>

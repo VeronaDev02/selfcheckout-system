@@ -389,32 +389,132 @@ function sendAnswer(id) {
     }
 }
 
+// Function to toggle fullscreen on a quadrant
+function toggleQuadrantFullscreen(element) {
+    const grid = document.getElementById('mainGrid');
+    
+    if (element.classList.contains('fullscreen')) {
+        // Exit fullscreen
+        element.classList.remove('fullscreen');
+        grid.classList.remove('has-fullscreen');
+        
+        // Show all quadrants
+        const allQuadrants = document.querySelectorAll('.stream-container');
+        allQuadrants.forEach(quadrant => {
+            quadrant.style.display = 'flex';
+            
+            // Reset the layout to default (log left, video right)
+            const logContainer = quadrant.querySelector('.log-container');
+            const videoContainer = quadrant.querySelector('.video-container');
+            
+            if (logContainer) logContainer.style.width = '30%';
+            if (videoContainer) videoContainer.style.width = '70%';
+        });
+    } else {
+        // Enter fullscreen
+        element.classList.add('fullscreen');
+        grid.classList.add('has-fullscreen');
+        
+        // Hide all other quadrants
+        const allQuadrants = document.querySelectorAll('.stream-container');
+        allQuadrants.forEach(quadrant => {
+            if (quadrant !== element) {
+                quadrant.style.display = 'none';
+            }
+        });
+    }
+}
+
 // Inicializa a interface
 document.addEventListener('DOMContentLoaded', () => {
     // Limpa todos os logs
     for (let i = 1; i <= 4; i++) {
         document.getElementById(`log${i}`).textContent = '';
     }
-});
-
-// Adiciona listener para a tecla Enter nos campos de entrada
-document.addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') {
-        const target = event.target;
-        
-        // Se for campo de endereço do servidor
-        if (target.id === 'serverAddress') {
-            connectToServer();
-        }
-        // Se for campo de URL RTSP
-        else if (target.id.startsWith('rtspUrl')) {
-            const id = target.id.charAt(target.id.length - 1);
-            connectCamera(id);
-        }
-        // Se for campo de IP do PDV
-        else if (target.id.startsWith('pdvIp')) {
-            const id = target.id.charAt(target.id.length - 1);
-            connectPDV(id);
+    
+    // Adiciona event listeners de duplo clique para todos os quadrantes
+    for (let i = 1; i <= 4; i++) {
+        const quadrant = document.getElementById(`quadrant${i}`);
+        if (quadrant) {
+            quadrant.addEventListener('dblclick', function() {
+                toggleQuadrantFullscreen(this);
+            });
         }
     }
+    
+    // Handle document fullscreen
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', function() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+                this.textContent = '[ ] Sair da Tela Cheia';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    this.textContent = '[ ] Tela Cheia';
+                }
+            }
+        });
+    }
+
+    // Toggle server controls
+    const toggleServerBtn = document.getElementById('toggleServerControls');
+    if (toggleServerBtn) {
+        toggleServerBtn.addEventListener('click', function() {
+            const panel = document.getElementById('serverControlsPanel');
+            panel.classList.toggle('visible');
+            this.textContent = panel.classList.contains('visible') ? '↓ Servidor' : '↑ Servidor';
+        });
+    }
+    
+    // Toggle connection controls
+    const toggleConnectionBtn = document.getElementById('toggleConnectionControls');
+    if (toggleConnectionBtn) {
+        toggleConnectionBtn.addEventListener('click', function() {
+            const connectionPanel = document.getElementById('connectionControlsPanel');
+            connectionPanel.classList.toggle('visible');
+            this.textContent = connectionPanel.classList.contains('visible') ? '↑ Ocultar Controles' : '↓ Mostrar Controles';
+        });
+    }
+
+    // Listen for Escape key to exit fullscreen quadrant
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const fullscreenQuadrant = document.querySelector('.stream-container.fullscreen');
+            if (fullscreenQuadrant) {
+                toggleQuadrantFullscreen(fullscreenQuadrant);
+            }
+        }
+    });
+
+    // Make sure videos don't show controls
+    const allVideos = document.querySelectorAll('video');
+    allVideos.forEach(video => {
+        video.controls = false;
+    });
+
+    // Adiciona listener para a tecla Enter nos campos de entrada
+    document.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            const target = event.target;
+            
+            // Se for campo de endereço do servidor
+            if (target.id === 'serverAddress') {
+                connectToServer();
+            }
+            // Se for campo de URL RTSP
+            else if (target.id.startsWith('rtspUrl')) {
+                const id = target.id.charAt(target.id.length - 1);
+                connectCamera(id);
+            }
+            // Se for campo de IP do PDV
+            else if (target.id.startsWith('pdvIp')) {
+                const id = target.id.charAt(target.id.length - 1);
+                connectPDV(id);
+            }
+        }
+    });
 });
