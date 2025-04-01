@@ -8,7 +8,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header similar to FXML -->
         <div class="header">
             <div class="logo-container">
                 <img src="imgs/verona_logo.png" alt="Verona Logo" class="logo">
@@ -21,7 +20,7 @@
             <button id="fullscreenBtn" class="fullscreen-btn">[ ] Tela Cheia</button>
         </div>
         
-        <!-- Main Grid with 4 quadrants -->
+        <!-- Grid com os 4 quadrantes -->
         <div class="stream-grid" id="mainGrid">
             <!-- Stream 1 -->
             <div class="stream-container" id="quadrant1">
@@ -68,7 +67,7 @@
             </div>
         </div>
         
-        <!-- Server connection controls -->
+        <!-- Server - Controle de conexão -->
         <div class="server-controls-container">
             <button id="toggleServerControls" class="toggle-server-controls">↑ Servidor</button>
             <div class="server-controls" id="serverControlsPanel">
@@ -79,14 +78,13 @@
             </div>
         </div>
         
-        <!-- Toggle button for connection controls -->
+        <!-- Toggle - botões para os controles de conexão -->
         <div class="toggle-connection-container">
             <button id="toggleConnectionControls" class="toggle-connection-controls">↓ Mostrar Controles</button>
         </div>
         
-        <!-- Footer with connection controls similar to FXML -->
         <div id="connectionControlsPanel" class="footer">
-            <!-- Row 1 - RTSP URLs -->
+            <!-- RTSP URLs -->
             <div class="connection-row">
                 <div class="connection-item">
                     <input type="text" id="rtspUrl1" class="connection-input" placeholder="RTSP URL 1" value="rtsp://exemplo/camera1">
@@ -106,7 +104,7 @@
                 </div>
             </div>
             
-            <!-- Row 2 - PDV IPs -->
+            <!-- PDV IPs -->
             <div class="connection-row">
                 <div class="connection-item">
                     <input type="text" id="pdvIp1" class="connection-input" placeholder="IP do PDV 1" value="192.168.104.201">

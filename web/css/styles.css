@@ -16,7 +16,6 @@ body, html {
     overflow: hidden; /* Garante que não haja overflow no container principal */
 }
 
-/* Header styling similar to FXML */
 .header {
     display: flex;
     align-items: center;
@@ -24,7 +23,7 @@ body, html {
     height: 70px;
     padding: 0 15px;
     position: relative;
-    flex-shrink: 0; /* Impede que o header encolha */
+    flex-shrink: 0;
 }
 
 .logo-container {
@@ -65,7 +64,7 @@ body, html {
     font-family: "Arial Black", Arial, sans-serif;
     font-size: 25px;
     color: white;
-    pointer-events: none; /* Allows clicking through the centered title */
+    pointer-events: none;
 }
 
 .fullscreen-btn {
@@ -79,20 +78,20 @@ body, html {
     margin-left: auto;
 }
 
-/* Main grid with quadrants */
+/* Grid principal com os quadrantes */
 .stream-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
     gap: 1px;
-    flex: 1 1 auto; /* Use flex para garantir que ele preencha o espaço disponível */
-    overflow: hidden; /* Garante que não haja overflow no grid */
+    flex: 1 1 auto; /* Use flex para garantir o espaço disponível será preenchido */
+    overflow: hidden; /* Garante que não haja overflow (linhas ultrapassando o limite do quadrante) no grid */
     background-color: #000000;
     border: 1px solid #333;
     min-height: 0; /* Crucial para que o flexbox respeite o tamanho */
 }
 
-/* When a quadrant is in fullscreen */
+/* Quando um quadrante está em fullscreen */
 .stream-grid.has-fullscreen {
     display: block;
 }
@@ -115,7 +114,7 @@ body, html {
     flex-direction: row;
 }
 
-/* Container for the log of each PDV - Versão otimizada para texto formatado */
+/* Container para cada log do PDV */
 .log-container {
     position: relative;
     width: 30%;
@@ -166,7 +165,7 @@ body, html {
     font-weight: bold;
 }
 
-/* Estilização automática baseada em texto - estas regras funcionam mesmo sem modificar o JavaScript */
+/* Estilização automática baseada em texto */
 .log-content span:has(+ #pdv) {
     color: #E91E63; /* Rosa para PDV */
     font-weight: bold;
@@ -297,7 +296,6 @@ body, html {
     z-index: 10;
 }
 
-/* Toggle connection controls button */
 .toggle-connection-container {
     position: relative;
     background-color: #444;
@@ -316,7 +314,6 @@ body, html {
     font-weight: bold;
 }
 
-/* Footer with connection controls */
 .footer {
     display: flex;
     flex-direction: column;
@@ -367,11 +364,10 @@ body, html {
     white-space: nowrap;
 }
 
-/* Server connection controls */
 .server-controls-container {
     position: relative;
     background-color: #333;
-    flex-shrink: 0; /* Impede encolhimento */
+    flex-shrink: 0;
 }
 
 .toggle-server-controls {
@@ -433,7 +429,6 @@ body, html {
     background-color: #4CAF50;
 }
 
-/* Cores para diferentes tipos de mensagens no log */
 .log-content .nova-venda {
     color: #FF9800;
     font-weight: bold;
@@ -541,4 +536,71 @@ body, html {
     .fullscreen-btn {
         margin: 5px 0;
     }
+}
+/* Alerta de inatividade - animação de piscar */
+@keyframes blink-background {
+    0% { background-color: #1e1e1e; }
+    50% { background-color: rgba(255, 193, 7, 0.6); } /* Amarelo com transparência */
+    100% { background-color: #1e1e1e; }
+}
+
+/* Aplicar a animação ao container de log quando há inatividade */
+.log-container.inactivity-alert {
+    animation: blink-background 1.5s infinite;
+    position: relative; /* Para posicionamento absoluto da notificação */
+    border: 2px solid #ff9800; /* Borda laranja para destacar ainda mais */
+}
+
+/* Notificação flutuante de inatividade */
+.pdv-notification {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 0, 0, 0.8);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 14px;
+    z-index: 100;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    max-width: 90%;
+    display: none; /* Inicialmente escondido, será mostrado via JavaScript */
+    animation: pulse 1.5s infinite;
+    pointer-events: none; /* Permite clicar "através" da notificação */
+}
+
+/* Animação de pulsar para a notificação */
+@keyframes pulse {
+    0% { opacity: 0.7; transform: translateX(-50%) scale(0.95); }
+    50% { opacity: 1; transform: translateX(-50%) scale(1); }
+    100% { opacity: 0.7; transform: translateX(-50%) scale(0.95); }
+}
+
+/* Estilo para destacar a notificação em modo tela cheia */
+.stream-container.fullscreen .pdv-notification {
+    font-size: 16px;
+    padding: 8px 16px;
+}
+
+/* Modificar a posição da notificação em telas menores */
+@media (max-width: 768px) {
+    .pdv-notification {
+        top: 5px;
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+}
+
+/* Estilo de foco ao passar o mouse sobre um quadrante com alerta */
+.log-container.inactivity-alert:hover {
+    animation-play-state: paused; /* Pausa a animação ao passar o mouse */
+    background-color: rgba(255, 193, 7, 0.3); /* Tom mais suave de amarelo */
+}
+
+/* Estilo especial para quadrantes com alerta na fila */
+.log-container.queued-alert {
+    border-left: 4px solid red;
 }

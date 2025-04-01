@@ -5,6 +5,12 @@ let peerConnections = {}; // Armazena as conexões WebRTC
 let serverConnection = null; // Conexão com o servidor PDV
 let isConnectedToServer = false;
 
+// Fila de alertas de inatividade por quadrante
+let inactivityAlerts = {
+    queue: [], // Fila de alertas pendentes
+    active: {} // Alertas atualmente ativos por quadrante
+};
+
 // Configurações de ICE para WebRTC
 const iceServers = {
     iceServers: [
@@ -105,6 +111,9 @@ function disconnectFromServer() {
         document.getElementById(`log${i}`).textContent = '';
     }
     
+    // Limpa alertas de inatividade
+    clearAllInactivityAlerts();
+    
     isConnectedToServer = false;
 }
 
@@ -177,6 +186,9 @@ async function connectCamera(id) {
 // Mantenha um mapeamento de quais quadrantes estão conectados a quais PDVs
 let pdvMapping = {};
 
+// Mapeamento reverso de IPs para quadrantes
+let ipToQuadrant = {};
+
 // Função para conectar ao PDV
 function connectPDV(id) {
     if (!isConnectedToServer || !serverConnection) {
@@ -209,8 +221,12 @@ function connectPDV(id) {
         logContent.textContent = '';
     }
     
+    // Remove alertas de inatividade antigos se existirem
+    clearInactivityAlert(id);
+    
     // Registra o mapeamento deste quadrante para este IP de PDV
     pdvMapping[pdvIp] = id;
+    ipToQuadrant[id] = pdvIp; // Mapeamento reverso
     
     // Envia comando de registro para o PDV
     try {
@@ -241,7 +257,7 @@ function connectPDV(id) {
 function setupMessageHandler() {
     if (!serverConnection) return;
     
-    // Primeiro, garantimos que cada log-container tenha um elemento interno para o conteúdo
+    // Primeiro, garanto que cada log-container tenha um elemento interno para o conteúdo
     for (let i = 1; i <= 4; i++) {
         const logContainer = document.getElementById(`log${i}`);
         // Verifica se já existe um elemento interno para o conteúdo
@@ -314,10 +330,209 @@ function setupMessageHandler() {
                     console.warn(`Recebida mensagem do PDV ${pdvIp}, mas não há quadrante associado`);
                 }
             }
+            // Se for alerta de inatividade do PDV
+            else if (message.type === 'pdv_inativo_timeout') {
+                const pdvIp = message.pdv_ip;
+                const quadranteId = pdvMapping[pdvIp];
+                
+                if (quadranteId) {
+                    // Adiciona o alerta à fila
+                    addInactivityAlert(quadranteId, pdvIp, message.inactive_time);
+                    
+                    // Adiciona mensagem ao log
+                    const logContainer = document.getElementById(`log${quadranteId}`);
+                    const logContent = logContainer.querySelector('.log-content') || logContainer;
+                    
+                    // Formata a data/hora atual
+                    const now = new Date();
+                    const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                    
+                    const lastTwoDigits = pdvIp.split('.').pop().padStart(3, '0').slice(-2);
+                    
+                    // Adiciona a mensagem ao log
+                    logContent.textContent += `[${timestamp}] [ALERTA] PDV ${lastTwoDigits} inativo por ${message.inactive_time} segundos!\n`;
+                    
+                    // Mantém o scroll no final do log
+                    logContent.scrollTop = logContent.scrollHeight;
+                    
+                    console.log(`Alerta de inatividade do PDV ${pdvIp} no quadrante ${quadranteId} por ${message.inactive_time} segundos`);
+                }
+            }
         } catch (error) {
             console.error('Erro ao processar mensagem do PDV:', error);
         }
     };
+}
+
+// Adiciona um novo alerta de inatividade à fila
+function addInactivityAlert(quadranteId, pdvIp, inactiveTime) {
+    // Se já existe um alerta para este quadrante, não faça nada
+    if (inactivityAlerts.active[quadranteId]) {
+        console.log(`Alerta já ativo para o quadrante ${quadranteId}`);
+        return;
+    }
+    
+    // Cria o objeto de alerta
+    const alert = {
+        quadranteId,
+        pdvIp,
+        inactiveTime
+    };
+    
+    // Adiciona à fila
+    inactivityAlerts.queue.push(alert);
+    
+    // Se não há alertas ativos neste quadrante, inicia o alerta
+    if (!inactivityAlerts.active[quadranteId]) {
+        processNextAlert();
+    }
+}
+
+// Processa o próximo alerta na fila
+function processNextAlert() {
+    // Se não há alertas na fila, não faz nada
+    if (inactivityAlerts.queue.length === 0) {
+        return;
+    }
+    
+    // Verifica se algum quadrante já está em fullscreen devido a um alerta de inatividade
+    const hasFullscreenAlert = Object.values(inactivityAlerts.active).some(alert => {
+        const quadrantElement = document.getElementById(`quadrant${alert.quadranteId}`);
+        return quadrantElement && quadrantElement.classList.contains('fullscreen') && 
+               quadrantElement.classList.contains('inactivity-fullscreen');
+    });
+    
+    // Se já tenho um quadrante em fullscreen devido a inatividade, não mostra outro em fullscreen
+    if (hasFullscreenAlert) {
+        // Mesmo assim processa o alerta visual sem fullscreen
+        const alert = inactivityAlerts.queue.shift();
+        showInactivityAlert(alert, false); // Passa false para não exibir em fullscreen
+        return;
+    }
+    
+    // Pega o próximo alerta da fila
+    const alert = inactivityAlerts.queue.shift();
+    
+    // Mostra o alerta com fullscreen
+    showInactivityAlert(alert, true); // Passa true para exibir em fullscreen
+}
+
+// Função para exibir alerta de inatividade (com ou sem fullscreen)
+function showInactivityAlert(alert, showFullscreen) {
+    // Marca como ativo
+    inactivityAlerts.active[alert.quadranteId] = alert;
+    
+    const quadrantElement = document.getElementById(`quadrant${alert.quadranteId}`);
+    const logContainer = document.getElementById(`log${alert.quadranteId}`);
+    
+    if (quadrantElement && logContainer) {
+        // Adiciona a classe de alerta
+        logContainer.classList.add('inactivity-alert');
+        
+        // Adiciona ou atualiza um elemento de notificação
+        let notificationElement = logContainer.querySelector('.pdv-notification');
+        if (!notificationElement) {
+            notificationElement = document.createElement('div');
+            notificationElement.className = 'pdv-notification';
+            logContainer.appendChild(notificationElement);
+        }
+        
+        const lastTwoDigits = alert.pdvIp.split('.').pop().padStart(3, '0').slice(-2);
+        notificationElement.textContent = `PDV ${lastTwoDigits} inativo por ${alert.inactiveTime}s`;
+        notificationElement.style.display = 'block';
+        
+        console.log(`Iniciado alerta visual para quadrante ${alert.quadranteId}`);
+        
+        // Se devo exibir em fullscreen e não está já em fullscreen
+        if (showFullscreen && !quadrantElement.classList.contains('fullscreen')) {
+            // Marca com uma classe adicional para sabermos que foi colocado em fullscreen por causa de inatividade
+            quadrantElement.classList.add('inactivity-fullscreen');
+            // Usa a função existente para ativar o fullscreen
+            toggleQuadrantFullscreen(quadrantElement);
+            console.log(`Quadrante ${alert.quadranteId} colocado em fullscreen automático devido à inatividade`);
+        }
+    }
+}
+
+// Limpa o alerta de inatividade de um quadrante específico
+function clearInactivityAlert(quadranteId) {
+    const wasActive = inactivityAlerts.active[quadranteId];
+    
+    // Remove da lista de alertas ativos
+    if (wasActive) {
+        delete inactivityAlerts.active[quadranteId];
+        
+        // Remove classes visuais
+        const logContainer = document.getElementById(`log${quadranteId}`);
+        const quadrantElement = document.getElementById(`quadrant${quadranteId}`);
+        
+        if (logContainer) {
+            logContainer.classList.remove('inactivity-alert');
+            
+            // Remove a notificação
+            const notification = logContainer.querySelector('.pdv-notification');
+            if (notification) {
+                notification.style.display = 'none';
+            }
+        }
+        
+        // Se este quadrante estava em fullscreen devido à inatividade, remova o fullscreen
+        if (quadrantElement && quadrantElement.classList.contains('inactivity-fullscreen')) {
+            // Remove a marca de fullscreen por inatividade
+            quadrantElement.classList.remove('inactivity-fullscreen');
+            
+            // Se estiver em fullscreen, remove o fullscreen
+            if (quadrantElement.classList.contains('fullscreen')) {
+                toggleQuadrantFullscreen(quadrantElement);
+                console.log(`Removido fullscreen automático do quadrante ${quadranteId}`);
+            }
+        }
+        
+        console.log(`Removido alerta visual do quadrante ${quadranteId}`);
+        
+        // Processa o próximo alerta na fila
+        processNextAlert();
+    }
+    
+    // Remove quaisquer alertas pendentes deste quadrante da fila
+    inactivityAlerts.queue = inactivityAlerts.queue.filter(
+        alert => alert.quadranteId !== quadranteId
+    );
+}
+
+// Limpa todos os alertas de inatividade
+function clearAllInactivityAlerts() {
+    // Remove todos os alertas ativos
+    Object.keys(inactivityAlerts.active).forEach(quadranteId => {
+        clearInactivityAlert(quadranteId);
+    });
+    
+    // Limpa a fila
+    inactivityAlerts.queue = [];
+    
+    // Remove classes visuais de todos os quadrantes
+    for (let i = 1; i <= 4; i++) {
+        const logContainer = document.getElementById(`log${i}`);
+        const quadrantElement = document.getElementById(`quadrant${i}`);
+        
+        if (logContainer) {
+            logContainer.classList.remove('inactivity-alert');
+            
+            // Remove a notificação
+            const notification = logContainer.querySelector('.pdv-notification');
+            if (notification) {
+                notification.style.display = 'none';
+            }
+        }
+        
+        // Remove a classe de fullscreen por inatividade e o fullscreen se necessário
+        if (quadrantElement && quadrantElement.classList.contains('inactivity-fullscreen')) {
+            quadrantElement.classList.remove('inactivity-fullscreen');
+            if (quadrantElement.classList.contains('fullscreen')) {
+                toggleQuadrantFullscreen(quadrantElement);
+            }
+        }
+    }
 }
 
 // Função para lidar com a oferta SDP do servidor
@@ -440,6 +655,18 @@ function toggleQuadrantFullscreen(element) {
             if (logContainer) logContainer.style.width = '30%';
             if (videoContainer) videoContainer.style.width = '70%';
         });
+        
+        // Se estava em fullscreen por inatividade e saiu do fullscreen manualmente,
+        // remova também a classe de inatividade-fullscreen
+        if (element.classList.contains('inactivity-fullscreen')) {
+            element.classList.remove('inactivity-fullscreen');
+            
+            // Extrair o ID do quadrante a partir do ID do elemento
+            const quadranteId = element.id.replace('quadrant', '');
+            
+            // Limpar alerta de inatividade para este quadrante também
+            clearInactivityAlert(quadranteId);
+        }
     } else {
         // Enter fullscreen
         element.classList.add('fullscreen');
@@ -467,6 +694,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const quadrant = document.getElementById(`quadrant${i}`);
         if (quadrant) {
             quadrant.addEventListener('dblclick', function() {
+                // Limpa qualquer alerta de inatividade neste quadrante
+                clearInactivityAlert(i);
+                
+                // Ativa/desativa modo tela cheia
                 toggleQuadrantFullscreen(this);
             });
         }
@@ -490,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Toggle server controls
+    // Toggle - controle do server
     const toggleServerBtn = document.getElementById('toggleServerControls');
     if (toggleServerBtn) {
         toggleServerBtn.addEventListener('click', function() {
@@ -500,7 +731,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Toggle connection controls
+    // Toggle - controle de conexão
     const toggleConnectionBtn = document.getElementById('toggleConnectionControls');
     if (toggleConnectionBtn) {
         toggleConnectionBtn.addEventListener('click', function() {
@@ -510,7 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Listen for Escape key to exit fullscreen quadrant
+    // Escuta a tecla para sair do quadrante fullscreen
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             const fullscreenQuadrant = document.querySelector('.stream-container.fullscreen');
@@ -520,7 +751,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Make sure videos don't show controls
+    // Tenha certeza de que os vídeos não têm controles padrão
     const allVideos = document.querySelectorAll('video');
     allVideos.forEach(video => {
         video.controls = false;
