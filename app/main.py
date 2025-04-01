@@ -9,6 +9,7 @@ from typing import Dict, Set
 from webrtc_conversion import WebRTCConversion
 from rtsp_connection import RTSPConnection
 from message_processor import process_message
+from pdv_transaction import PDVTransaction
 
 # Dicionário para armazenar os clientes WebSocket por IP do PDV
 pdv_clients = {
@@ -19,7 +20,7 @@ pdv_clients = {
 }
 
 class UnifiedServer:
-    def __init__(self, ws_port=8765, rtsp_ws_port=8080, udp_port=38800):
+    def __init__(self, ws_port=8765, rtsp_ws_port=8080, udp_port=38800, pdv_timeout=180):
         self.ws_port = ws_port
         self.rtsp_ws_port = rtsp_ws_port
         self.udp_port = udp_port
@@ -27,6 +28,9 @@ class UnifiedServer:
         # Para o servidor WebRTC
         self.active_rtsp_connections = set()
         self.webrtc_conversions: Dict[str, WebRTCConversion] = {}
+        
+        # Monitor de transações do PDV
+        self.pdv_monitor = PDVTransaction(timeout_seconds=pdv_timeout)
         
     async def register_pdv_client(self, websocket, pdv_ip):
         """Registra um cliente WebSocket para receber mensagens de um PDV específico"""
@@ -157,6 +161,14 @@ class UnifiedServer:
                     raw_message = data.decode('utf-8', 'ignore')
                     processed_message = process_message(raw_message, client_ip)
                     
+                    # Processa a mensagem com o monitor de transações do PDV
+                    self.pdv_monitor.process_pdv_message(
+                        raw_message, 
+                        client_ip, 
+                        pdv_clients, 
+                        loop
+                    )
+                    
                     # Envia para os clientes WebSocket registrados para este IP
                     if client_ip in pdv_clients:
                         message_to_send = json.dumps({
@@ -212,12 +224,14 @@ def main():
     parser.add_argument('--ws-port', type=int, default=8765, help='Porta do servidor WebSocket para PDV')
     parser.add_argument('--rtsp-ws-port', type=int, default=8080, help='Porta do servidor WebSocket para RTSP')
     parser.add_argument('--udp-port', type=int, default=38800, help='Porta do servidor UDP')
+    parser.add_argument('--pdv-timeout', type=int, default=180, help='Tempo (em segundos) para timeout de inatividade do PDV')
     args = parser.parse_args()
     
     unified_server = UnifiedServer(
         ws_port=args.ws_port,
         rtsp_ws_port=args.rtsp_ws_port,
-        udp_port=args.udp_port
+        udp_port=args.udp_port,
+        pdv_timeout=args.pdv_timeout
     )
     
     try:
