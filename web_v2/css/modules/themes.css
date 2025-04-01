@@ -1,0 +1,93 @@
+/**
+ * themes.css - Sistema de temas (claro/escuro)
+ */
+
+ :root {
+    /* Tema Escuro (padrão) */
+    --bg-primary: #1c1c1c;
+    --bg-secondary: #000000;
+    --bg-tertiary: #2a2a2a;
+    --bg-quadrant: #000000;
+    --bg-log: #1e1e1e;
+    --bg-input: #141414;
+    --bg-header: #000000;
+    --bg-controls: #444;
+    --bg-server: #333;
+    
+    --text-primary: #ffffff;
+    --text-secondary: #dddddd;
+    --text-muted: #aaaaaa;
+    
+    --border-color: #333;
+    --border-accent: #555;
+    
+    --btn-primary: #2196f3;
+    --btn-connect: #4CAF50;
+    --btn-disconnect: #f44336;
+    --btn-fullscreen: #FF0000;
+    
+    --alert-color: #ff9800;
+    --status-connected: #4CAF50;
+    --status-disconnected: #ff6347;
+    
+    /* Variáveis para diferentes tipos de mensagens */
+    --log-default: #dddddd;
+    --log-nova-venda: #FF9800;
+    --log-pagamento: #4CAF50;
+    --log-total: #2196F3;
+    --log-gaveta: #FFC107;
+    --log-relatorio: #9C27B0;
+    --log-desconto: #E91E63;
+    --log-error: #f44336;
+    --log-info: #2196f3;
+    --log-warning: #ff9800;
+    --log-timestamp: #607D8B;
+}
+
+/* Tema Claro */
+body.light-theme {
+    --bg-primary: #f5f5f5;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #e0e0e0;
+    --bg-quadrant: #ffffff;
+    --bg-log: #f0f0f0;
+    --bg-input: #ffffff;
+    --bg-header: #e0e0e0;
+    --bg-controls: #e0e0e0;
+    --bg-server: #d0d0d0;
+    
+    --text-primary: #212121;
+    --text-secondary: #333333;
+    --text-muted: #666666;
+    
+    --border-color: #cccccc;
+    --border-accent: #999999;
+    
+    --btn-primary: #1976d2;
+    --btn-connect: #388E3C;
+    --btn-disconnect: #d32f2f;
+    --btn-fullscreen: #d32f2f;
+    
+    --alert-color: #ff9800;
+    --status-connected: #388E3C;
+    --status-disconnected: #d32f2f;
+    
+    /* Variáveis para diferentes tipos de mensagens no tema claro */
+    --log-default: #212121;
+    --log-nova-venda: #E65100;
+    --log-pagamento: #1B5E20;
+    --log-total: #0D47A1;
+    --log-gaveta: #F57F17;
+    --log-relatorio: #4A148C;
+    --log-desconto: #880E4F;
+    --log-error: #b71c1c;
+    --log-info: #0D47A1;
+    --log-warning: #E65100;
+    --log-timestamp: #37474F;
+}
+
+/* Transição suave para mudança de tema */
+body, .container, .stream-container, .log-container, .video-container,
+.header, .footer, .server-controls, .connection-input, button {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

@@ -1,0 +1,144 @@
+/**
+ * controls.css - Estilos para os controles e painéis de configuração
+ */
+
+/* Container para toggle de conexão */
+.toggle-connection-container {
+    position: relative;
+    background-color: var(--bg-controls);
+    text-align: center;
+    flex-shrink: 0; /* Impede encolhimento */
+}
+
+.toggle-connection-controls {
+    width: 100%;
+    padding: 5px;
+    background-color: var(--bg-controls);
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Footer com controles de conexão */
+.footer {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-tertiary);
+    padding: 0;
+    gap: 10px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+    opacity: 0;
+    flex-shrink: 0; /* Impede encolhimento */
+}
+
+.footer.visible {
+    max-height: 200px; /* Ajuste conforme necessário */
+    padding: 15px;
+    opacity: 1;
+}
+
+/* Linhas de controles de conexão */
+.connection-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.connection-item {
+    display: flex;
+    flex: 1;
+}
+
+.connection-input {
+    flex-grow: 1;
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 8px;
+    margin-right: 5px;
+}
+
+.connect-button {
+    background-color: var(--btn-primary);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    font-family: "Arial Black", Arial, sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* Container de controles do servidor */
+.server-controls-container {
+    position: relative;
+    background-color: var(--bg-server);
+    flex-shrink: 0;
+}
+
+.toggle-server-controls {
+    width: 100%;
+    padding: 5px;
+    background-color: var(--bg-controls);
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.server-controls {
+    display: flex;
+    align-items: center;
+    padding: 0;
+    gap: 10px;
+    background-color: var(--bg-server);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+    opacity: 0;
+}
+
+.server-controls.visible {
+    max-height: 50px;
+    padding: 10px;
+    opacity: 1;
+}
+
+.server-controls input {
+    flex: 0 1 200px;
+    padding: 5px;
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border-accent);
+}
+
+.server-controls button:first-of-type {
+    padding: 5px 10px;
+    background-color: var(--btn-connect);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.server-controls button:last-of-type {
+    padding: 5px 10px;
+    background-color: var(--btn-disconnect);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.server-controls span {
+    margin-left: auto;
+    padding: 3px 8px;
+    background-color: var(--status-disconnected);
+    color: white;
+    border-radius: 3px;
+}
+
+.server-controls span.connected {
+    background-color: var(--status-connected);
+}

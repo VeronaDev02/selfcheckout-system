@@ -1,0 +1,57 @@
+/**
+ * alerts.css - Estilos para o sistema de alertas de inatividade
+ */
+
+/* Alerta de inatividade - animação de piscar */
+@keyframes blink-background {
+    0% { background-color: var(--bg-log); }
+    50% { background-color: rgba(255, 193, 7, 0.6); } /* Amarelo com transparência */
+    100% { background-color: var(--bg-log); }
+}
+
+/* Aplicar a animação ao container de log quando há inatividade */
+.log-container.inactivity-alert {
+    animation: blink-background 1.5s infinite;
+    position: relative; /* Para posicionamento absoluto da notificação */
+    border: 2px solid var(--alert-color); /* Borda laranja para destacar ainda mais */
+}
+
+/* Notificação flutuante de inatividade */
+.pdv-notification {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 0, 0, 0.8);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 14px;
+    z-index: 100;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    max-width: 90%;
+    display: none; /* Inicialmente escondido, será mostrado via JavaScript */
+    animation: pulse 1.5s infinite;
+    pointer-events: none; /* Permite clicar "através" da notificação */
+}
+
+/* Animação de pulsar para a notificação */
+@keyframes pulse {
+    0% { opacity: 0.7; transform: translateX(-50%) scale(0.95); }
+    50% { opacity: 1; transform: translateX(-50%) scale(1); }
+    100% { opacity: 0.7; transform: translateX(-50%) scale(0.95); }
+}
+
+/* Estilo para destacar a notificação em modo tela cheia */
+.stream-container.fullscreen .pdv-notification {
+    font-size: 16px;
+    padding: 8px 16px;
+}
+
+/* Estilo de foco ao passar o mouse sobre um quadrante com alerta */
+.log-container.inactivity-alert:hover {
+    animation-play-state: paused; /* Pausa a animação ao passar o mouse */
+    background-color: rgba(255, 193, 7, 0.3); /* Tom mais suave de amarelo */
+}

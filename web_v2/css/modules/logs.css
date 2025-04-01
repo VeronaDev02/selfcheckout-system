@@ -1,0 +1,153 @@
+/**
+ * logs.css - Estilos para a área de logs do PDV
+ */
+
+/* Conteúdo do log com formatação específica para mensagens PDV */
+.log-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: auto; /* Scroll vertical somente quando necessário */
+    overflow-x: hidden; /* Sem scroll horizontal */
+    padding: 5px;
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.2;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: var(--log-default);
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+/* Estilos para tipos específicos de mensagens */
+.log-content .nova-venda {
+    color: var(--log-nova-venda);
+    font-weight: bold;
+    border-top: 1px dotted var(--border-color);
+    padding-top: 2px;
+    margin-top: 2px;
+}
+
+.log-content .pagamento {
+    color: var(--log-pagamento);
+    font-weight: bold;
+}
+
+.log-content .total {
+    color: var(--log-total);
+    font-weight: bold;
+}
+
+.log-content .gaveta {
+    color: var(--log-gaveta);
+    font-style: italic;
+}
+
+.log-content .relatorio {
+    color: var(--log-relatorio);
+    font-weight: bold;
+}
+
+.log-content .desconto {
+    color: var(--log-desconto);
+    font-weight: bold;
+}
+
+/* Coloração baseada em padrões de texto nas mensagens */
+.log-content span {
+    display: inline;
+}
+
+/* Cores para valores de produtos e transações */
+.log-content span[data-valor] {
+    color: var(--log-pagamento); /* Verde para valores */
+    font-weight: bold;
+}
+
+/* Cores para códigos de produtos */
+.log-content span[data-codigo] {
+    color: var(--log-gaveta); /* Amarelo para códigos */
+}
+
+/* Cores para nomes de produtos */
+.log-content span[data-produto] {
+    color: var(--log-total); /* Azul para produtos */
+}
+
+/* Cores para status de transação */
+.log-content span[data-status] {
+    color: var(--log-nova-venda); /* Laranja para status */
+    font-weight: bold;
+}
+
+/* Realce para transações */
+.log-content span[data-transacao] {
+    color: var(--log-relatorio); /* Roxo para números de transação */
+    font-weight: bold;
+}
+
+/* Estilização automática baseada em texto */
+.log-content span:has(+ #pdv) {
+    color: var(--log-desconto); /* Rosa para PDV */
+    font-weight: bold;
+}
+
+/* Realce de linhas baseadas em padrões de texto */
+.log-content div:contains("TOTAL R$:") {
+    color: var(--log-pagamento);
+    font-weight: bold;
+    border-top: 1px dotted var(--border-accent);
+    padding-top: 3px;
+}
+
+.log-content div:contains("ABERTURA DE GAVETA") {
+    color: var(--log-nova-venda);
+    font-weight: bold;
+}
+
+.log-content div:contains("RELATÓRIO GERENCIAL") {
+    color: var(--log-relatorio);
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+/* Estilização para timestamps */
+.log-content span.timestamp {
+    color: var(--log-timestamp); /* Cinza azulado */
+    font-size: 0.9em;
+}
+
+/* Melhoria visual para números/valores */
+.log-numeric {
+    font-family: "Consolas", monospace;
+    letter-spacing: -0.5px;
+}
+
+/* Destaque para mensagens importantes */
+.log-content div.important {
+    background-color: rgba(255, 193, 7, 0.2);
+    border-radius: 2px;
+    padding: 1px 3px;
+}
+
+/* Melhora legibilidade durante rolagem */
+.log-container {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-accent) var(--bg-log);
+}
+
+.log-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.log-container::-webkit-scrollbar-track {
+    background: var(--bg-log);
+}
+
+.log-container::-webkit-scrollbar-thumb {
+    background-color: var(--border-accent);
+    border-radius: 4px;
+}

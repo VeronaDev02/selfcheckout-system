@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SelfCheckout</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-container">
+                <img id= "logoImage" src="imgs/verona_logo.png" alt="Verona Logo" class="logo">
+                <div class="brand-text">
+                    <div class="grupo-text">Grupo</div>
+                    <div class="verona-text">Verona</div>
+                </div>
+            </div>
+            <div class="title">SelfCheckout</div>
+            <div class="header-buttons">
+                <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Alternar tema">
+                    <!-- Ícone do Sol (para tema escuro) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="theme-icon theme-icon-sun" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <!-- Ícone da Lua (para tema claro) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="theme-icon theme-icon-moon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <span id="themeText">Tema Claro</span>
+                </button>
+                <button id="fullscreenBtn" class="fullscreen-btn">[ ] Tela Cheia</button>
+            </div>
+        </div>
+        
+        <!-- Grid com os 4 quadrantes -->
+        <div class="stream-grid" id="mainGrid">
+            <!-- Stream 1 -->
+            <div class="stream-container" id="quadrant1">
+                <div class="log-container" id="log1">
+                    <div class="log-content"></div>
+                </div>
+                <div class="video-container">
+                    <video id="remoteVideo1" autoplay playsinline muted></video>
+                    <div class="video-overlay" id="status1">Desconectado</div>
+                </div>
+            </div>
+            
+            <!-- Stream 2 -->
+            <div class="stream-container" id="quadrant2">
+                <div class="log-container" id="log2">
+                    <div class="log-content"></div>
+                </div>
+                <div class="video-container">
+                    <video id="remoteVideo2" autoplay playsinline muted></video>
+                    <div class="video-overlay" id="status2">Desconectado</div>
+                </div>
+            </div>
+            
+            <!-- Stream 3 -->
+            <div class="stream-container" id="quadrant3">
+                <div class="log-container" id="log3">
+                    <div class="log-content"></div>
+                </div>
+                <div class="video-container">
+                    <video id="remoteVideo3" autoplay playsinline muted></video>
+                    <div class="video-overlay" id="status3">Desconectado</div>
+                </div>
+            </div>
+            
+            <!-- Stream 4 -->
+            <div class="stream-container" id="quadrant4">
+                <div class="log-container" id="log4">
+                    <div class="log-content"></div>
+                </div>
+                <div class="video-container">
+                    <video id="remoteVideo4" autoplay playsinline muted></video>
+                    <div class="video-overlay" id="status4">Desconectado</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Server - Controle de conexão -->
+        <div class="server-controls-container">
+            <button id="toggleServerControls" class="toggle-server-controls">↑ Servidor</button>
+            <div class="server-controls" id="serverControlsPanel">
+                <input type="text" id="serverAddress" placeholder="Endereço do Servidor" value="localhost:8080">
+                <button onclick="connectToServer()">Conectar Servidor</button>
+                <button onclick="disconnectFromServer()">Desconectar</button>
+                <span id="serverStatus">Desconectado</span>
+            </div>
+        </div>
+        
+        <!-- Toggle - botões para os controles de conexão -->
+        <div class="toggle-connection-container">
+            <button id="toggleConnectionControls" class="toggle-connection-controls">↓ Mostrar Controles</button>
+        </div>
+        
+        <div id="connectionControlsPanel" class="footer">
+            <!-- RTSP URLs -->
+            <div class="connection-row">
+                <div class="connection-item">
+                    <input type="text" id="rtspUrl1" class="connection-input" placeholder="RTSP URL 1" value="rtsp://exemplo/camera1">
+                    <button onclick="connectCamera(1)" class="connect-button">Conectar</button>
+                </div>
+                <div class="connection-item">
+                    <input type="text" id="rtspUrl2" class="connection-input" placeholder="RTSP URL 2" value="rtsp://exemplo/camera2">
+                    <button onclick="connectCamera(2)" class="connect-button">Conectar</button>
+                </div>
+                <div class="connection-item">
+                    <input type="text" id="rtspUrl3" class="connection-input" placeholder="RTSP URL 3" value="rtsp://exemplo/camera3">
+                    <button onclick="connectCamera(3)" class="connect-button">Conectar</button>
+                </div>
+                <div class="connection-item">
+                    <input type="text" id="rtspUrl4" class="connection-input" placeholder="RTSP URL 4" value="rtsp://exemplo/camera4">
+                    <button onclick="connectCamera(4)" class="connect-button">Conectar</button>
+                </div>
+            </div>
+            
+            <!-- PDV IPs -->
+            <div class="connection-row">
+                <div class="connection-item">
+                    <input type="text" id="pdvIp1" class="connection-input" placeholder="IP do PDV 1" value="192.168.104.201">
+                    <button onclick="connectPDV(1)" class="connect-button">Conectar</button>
+                </div>
+                <div class="connection-item">
+                    <input type="text" id="pdvIp2" class="connection-input" placeholder="IP do PDV 2" value="192.168.104.205">
+                    <button onclick="connectPDV(2)" class="connect-button">Conectar</button>
+                </div>
+                <div class="connection-item">
+                    <input type="text" id="pdvIp3" class="connection-input" placeholder="IP do PDV 3" value="192.168.104.216">
+                    <button onclick="connectPDV(3)" class="connect-button">Conectar</button>
+                </div>
+                <div class="connection-item">
+                    <input type="text" id="pdvIp4" class="connection-input" placeholder="IP do PDV 4" value="192.168.104.218">
+                    <button onclick="connectPDV(4)" class="connect-button">Conectar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Carrega o script principal usando módulos ES6 -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

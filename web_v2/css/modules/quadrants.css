@@ -1,0 +1,44 @@
+/**
+ * quadrants.css - Estilos para os quadrantes de visualização
+ */
+
+/* Container para cada log do PDV */
+.log-container {
+    position: relative;
+    width: 30%;
+    height: 100%;
+    max-height: 100%;
+    background-color: var(--bg-log);
+    border-right: 1px solid var(--border-color);
+    flex: 0 0 30%; /* Define largura fixa como 30% sem crescer ou encolher */
+    overflow: hidden; /* Força contenção do conteúdo */
+}
+
+/* Container para o vídeo de cada câmera */
+.video-container {
+    position: relative;
+    width: 70%;
+    height: 100%;
+    max-height: 100%;
+    background-color: var(--bg-secondary);
+    overflow: hidden;
+    flex: 0 0 70%; /* Define largura fixa como 70% sem crescer ou encolher */
+}
+
+/* Overlay com status da câmera */
+.video-overlay {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.7em;
+    z-index: 10;
+}
+
+/* Estilo especial para quadrantes com alerta na fila */
+.log-container.queued-alert {
+    border-left: 4px solid var(--alert-color);
+}

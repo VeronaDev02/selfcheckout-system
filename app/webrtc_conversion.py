@@ -76,7 +76,7 @@ class FrameGrabber(threading.Thread):
             
         # Opcionalmente, converte para escala de cinza para reduzir ainda mais o processamento
         # Se eu quiser tirar as cores:
-        resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        # resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
         # resized = cv2.cvtColor(resized, cv2.COLOR_GRAY2BGR)  # Converte de volta para BGR se necessário
         
         return resized

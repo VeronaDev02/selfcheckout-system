@@ -1,0 +1,41 @@
+/**
+ * layout.css - Estilos para o layout principal e grid
+ */
+
+/* Grid principal com os quadrantes */
+.stream-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 1px;
+    flex: 1 1 auto; /* Use flex para garantir o espaço disponível será preenchido */
+    overflow: hidden; /* Garante que não haja overflow (linhas ultrapassando o limite do quadrante) no grid */
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    min-height: 0; /* Crucial para que o flexbox respeite o tamanho */
+}
+
+/* Quando um quadrante está em fullscreen */
+.stream-grid.has-fullscreen {
+    display: block;
+}
+
+/* Container de cada stream (quadrante) */
+.stream-container {
+    display: flex;
+    background-color: var(--bg-quadrant);
+    transition: all 0.3s ease;
+    height: 100%; /* Garante altura total */
+    max-height: 100%; /* Limita altura máxima */
+    overflow: hidden; /* Garante que não haja overflow no container de stream */
+    position: relative; /* Para posicionamento de elementos internos */
+}
+
+/* Estilo para container em fullscreen */
+.stream-container.fullscreen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+}

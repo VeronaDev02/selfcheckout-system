@@ -1,0 +1,23 @@
+/**
+ * main.css - Arquivo principal CSS que importa todos os módulos CSS
+ */
+
+/* Importa sistema de temas primeiro */
+@import 'modules/themes.css';
+
+/* Importa reset e estilos base */
+@import 'modules/reset.css';
+
+/* Importa layout principal */
+@import 'modules/layout.css';
+
+/* Importa componentes da interface */
+@import 'modules/header.css';
+@import 'modules/quadrants.css';
+@import 'modules/controls.css';
+@import 'modules/logs.css';
+@import 'modules/video.css';
+@import 'modules/alerts.css';
+
+/* Importa estilos responsivos */
+@import 'modules/responsive.css';

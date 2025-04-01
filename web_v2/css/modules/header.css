@@ -1,0 +1,151 @@
+/**
+ * header.css - Estilos para o cabeçalho da aplicação
+ */
+
+ .header {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-header);
+    height: 70px;
+    padding: 0 15px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    height: 44px;
+    width: auto;
+    margin-right: 10px;
+}
+
+.brand-text {
+    display: flex;
+    flex-direction: column;
+    margin-left: 100px;
+}
+
+/* Logo para modo escuro (padrão) */
+.logo-light {
+    display: none;
+}
+
+/* Logo para tema escuro (padrão) */
+.logo-dark {
+    display: block;
+}
+
+.logo-light {
+    display: none;
+}
+
+/* Alteração para tema claro */
+body.light-theme .logo-dark {
+    display: none;
+}
+
+body.light-theme .logo-light {
+    display: block;
+}
+
+/* Altera a exibição dos logos no tema claro */
+body.light-theme .logo-dark {
+    display: none;
+}
+
+body.light-theme .logo-light {
+    display: block;
+}
+
+.grupo-text {
+    font-family: "Arial Black", Arial, sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+.verona-text {
+    font-family: "Arial Black", Arial, sans-serif;
+    font-size: 25px;
+    font-weight: bold;
+    color: #d32f2f; /* Mantida a cor da logo Verona em vermelho */
+}
+
+.title {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-family: "Arial Black", Arial, sans-serif;
+    font-size: 25px;
+    color: var(--text-primary);
+    pointer-events: none;
+}
+
+.header-buttons {
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.fullscreen-btn {
+    background-color: var(--btn-fullscreen);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    font-family: "Arial Black", Arial, sans-serif;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+/* Novo estilo para o botão de tema circular */
+.theme-toggle-btn {
+    background: none;
+    border: none;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: transparent;
+    transition: background-color 0.2s;
+}
+
+.theme-toggle-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.theme-icon {
+    font-size: 20px;
+    color: var(--text-primary);
+    transition: transform 0.3s ease;
+}
+
+/* Esconde o texto do botão */
+#themeText {
+    display: none;
+}
+
+/* Estilo para o ícone do sol (modo claro) */
+body:not(.light-theme) .theme-icon-moon {
+    display: none;
+}
+
+body.light-theme .theme-icon-sun {
+    display: none;
+}
+
+/* Animação sutil ao clicar */
+.theme-toggle-btn:active .theme-icon {
+    transform: scale(0.85);
+}
