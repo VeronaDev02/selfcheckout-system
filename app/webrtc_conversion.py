@@ -75,8 +75,8 @@ class FrameGrabber(threading.Thread):
             resized = cv2.GaussianBlur(resized, (3, 3), 0)
             
         # Opcionalmente, converte para escala de cinza para reduzir ainda mais o processamento
-        # Se a aplicação não precisar de cores, descomente a linha abaixo
-        # resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        # Se eu quiser tirar as cores:
+        resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
         # resized = cv2.cvtColor(resized, cv2.COLOR_GRAY2BGR)  # Converte de volta para BGR se necessário
         
         return resized
