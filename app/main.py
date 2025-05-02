@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 import socket
+import time  # Adicionado o import do módulo time
 import websockets
 from aiortc import RTCSessionDescription
 from typing import Dict, Set
@@ -103,31 +104,19 @@ class UnifiedServer:
         
     async def get_or_create_webrtc_conversion(self, rtsp_url):
         try:
-            # Sempre limpar qualquer instância existente da URL para forçar a criação de uma nova
+            # Verifica se já existe uma conversão para esta URL
             if rtsp_url in self.webrtc_conversions:
-                print(f"Forçando recriação da conversão WebRTC para {rtsp_url}")
+                # Limpa a conversão existente para garantir uma nova conexão limpa
+                print(f"Removendo conversão existente para {rtsp_url} e criando nova")
                 await self.cleanup_conversion(rtsp_url)
                 
-            # Cria uma instância totalmente nova
+            # Cria uma nova conversão limpa
+            print(f"Criando nova conversão WebRTC para {rtsp_url}")
             conversion = WebRTCConversion.get_instance(rtsp_url, downscale_factor=2.0, frame_skip=2, quality_reduce=50)
             
-            # Força reconexão
-            if conversion.is_connected:
-                print(f"Forçando reconexão do RTSP para {rtsp_url}")
-                # Forçar fechamento
-                try:
-                    if conversion.rtsp_connection:
-                        conversion.rtsp_connection.close()
-                        conversion.rtsp_connection = None
-                    if conversion.video_track:
-                        conversion.video_track.stop()
-                        conversion.video_track = None
-                    conversion.is_connected = False
-                except Exception as e:
-                    print(f"Erro ao forçar fechamento: {e}")
-            
-            # Conecta sempre, após limpeza forçada
+            # Conecta a nova conversão
             await conversion.connect(rtsp_url)
+            self.webrtc_conversions[rtsp_url] = conversion
             
             return conversion
         except Exception as e:
@@ -158,26 +147,41 @@ class UnifiedServer:
 
     async def rtsp_websocket_handler(self, websocket):
         rtsp_url = None
+        session_id = f"session_{id(websocket)}_{time.time()}"  # ID único para esta conexão
         await self.register_rtsp_client(websocket)
+        
         try:
-            # Reinicia completamente o sistema WebRTC a cada nova conexão
-            await self.reset_webrtc_system()
-            
             # Primeira mensagem deve ser a URL RTSP
             rtsp_url = await websocket.recv()
-            print(f"Recebida URL RTSP: {rtsp_url}")
+            print(f"Recebida URL RTSP: {rtsp_url} (Sessão: {session_id})")
 
             # Incrementa o contador de clientes para esta URL
             self.rtsp_client_count[rtsp_url] = self.rtsp_client_count.get(rtsp_url, 0) + 1
+            print(f"Clientes conectados para URL {rtsp_url}: {self.rtsp_client_count[rtsp_url]}")
             
-            # Obtém ou cria conversão WebRTC
-            webrtc_conversion = await self.get_or_create_webrtc_conversion(rtsp_url)
-            
+            # Verifica se a URL já existe, mas está em um estado problemático
+            need_reconnect = False
+            if rtsp_url in self.webrtc_conversions:
+                conversion = self.webrtc_conversions[rtsp_url]
+                # Se a conversão existir mas não estiver conectada, forçamos reconexão
+                if not conversion.is_connected:
+                    print(f"Conexão existente inativa para {rtsp_url}, forçando reconexão")
+                    await self.cleanup_conversion(rtsp_url)
+                    need_reconnect = True
+                    
+            # Criar nova conversão se não existir ou precisar reconectar
+            if need_reconnect or rtsp_url not in self.webrtc_conversions:
+                # Obtém ou cria conversão WebRTC
+                webrtc_conversion = await self.get_or_create_webrtc_conversion(rtsp_url)
+            else:
+                # Usa a conversão existente
+                webrtc_conversion = self.webrtc_conversions[rtsp_url]
+                
             # Cria oferta SDP
             offer = await webrtc_conversion.create_offer()
             
             # Envia oferta para o cliente
-            print(f"Enviando oferta SDP para o cliente")
+            print(f"Enviando oferta SDP para o cliente (Sessão: {session_id})")
             offer_dict = {"sdp": offer.sdp, "type": offer.type}
             await websocket.send(json.dumps(offer_dict))
             
@@ -188,18 +192,33 @@ class UnifiedServer:
             
             # Processa resposta
             await webrtc_conversion.process_answer(answer)
+            print(f"Conexão WebRTC estabelecida para {rtsp_url} (Sessão: {session_id})")
             
-            # Mantém a conexão aberta
+            # Mantém a conexão aberta com um ping periódico para detectar desconexões
+            ping_interval = 5  # segundos
             while True:
                 try:
-                    message = await websocket.recv()
+                    # Usa um timeout para evitar bloquear para sempre
+                    message = await asyncio.wait_for(
+                        websocket.recv(),
+                        timeout=ping_interval
+                    )
                     if message == "CLOSE":
                         break
+                except asyncio.TimeoutError:
+                    # Timeout usado para verificar a conexão periodicamente
+                    try:
+                        # Tenta enviar um ping para verificar se a conexão ainda está ativa
+                        await websocket.ping()
+                    except:
+                        print(f"Ping falhou para {rtsp_url} (Sessão: {session_id}), assumindo desconexão")
+                        break
                 except websockets.exceptions.ConnectionClosed:
+                    print(f"Conexão fechada para {rtsp_url} (Sessão: {session_id})")
                     break
                     
         except Exception as e:
-            print(f"Erro no handler WebSocket RTSP: {e}")
+            print(f"Erro no handler WebSocket RTSP: {e} (Sessão: {session_id})")
         finally:
             # Sempre remove o cliente da lista de conexões ativas
             await self.unregister_rtsp_client(websocket)
@@ -208,12 +227,15 @@ class UnifiedServer:
             if rtsp_url:
                 try:
                     self.rtsp_client_count[rtsp_url] = max(0, self.rtsp_client_count.get(rtsp_url, 1) - 1)
+                    print(f"Cliente desconectado da URL {rtsp_url} (Sessão: {session_id}). Clientes restantes: {self.rtsp_client_count[rtsp_url]}")
+                    
                     # Se não houver mais clientes, limpa a conversão
                     if self.rtsp_client_count[rtsp_url] <= 0:
                         await self.cleanup_conversion(rtsp_url)
                         self.rtsp_client_count.pop(rtsp_url, None)
+                        print(f"Sem clientes para URL {rtsp_url}, recursos liberados (Sessão: {session_id})")
                 except Exception as e:
-                    print(f"Erro ao decrementar contador RTSP para {rtsp_url}: {e}")
+                    print(f"Erro ao decrementar contador RTSP para {rtsp_url}: {e} (Sessão: {session_id})")
 
     # Servidor UDP para recebimento de mensagens do PDV
     async def start_udp_server(self):
