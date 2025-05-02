@@ -11,13 +11,8 @@ from rtsp_connection import RTSPConnection
 from message_processor import process_message
 from pdv_transaction import PDVTransaction
 
-# Dicionário para armazenar os clientes WebSocket por IP do PDV
-pdv_clients = {
-    "192.168.104.201": set(),
-    "192.168.104.205": set(),
-    "192.168.104.216": set(),
-    "192.168.104.218": set(),
-}
+# Dicionário dinâmico para armazenar os clientes WebSocket por IP do PDV
+pdv_clients = {}
 
 class UnifiedServer:
     def __init__(self, ws_port=8765, rtsp_ws_port=8080, udp_port=38800, pdv_timeout=180):
@@ -37,13 +32,13 @@ class UnifiedServer:
         
     async def register_pdv_client(self, websocket, pdv_ip):
         """Registra um cliente WebSocket para receber mensagens de um PDV específico"""
-        if pdv_ip in pdv_clients:
-            pdv_clients[pdv_ip].add(websocket)
-            print(f"Cliente registrado para o PDV {pdv_ip}")
-            return True
-        else:
-            print(f"IP de PDV inválido: {pdv_ip}")
-            return False
+        # Cria o conjunto para o IP do PDV se ele não existir
+        if pdv_ip not in pdv_clients:
+            pdv_clients[pdv_ip] = set()
+            
+        pdv_clients[pdv_ip].add(websocket)
+        print(f"Cliente registrado para o PDV {pdv_ip}")
+        return True
 
     async def unregister_pdv_client(self, websocket):
         """Remove um cliente WebSocket quando a conexão é fechada"""
@@ -51,6 +46,11 @@ class UnifiedServer:
             if websocket in clients:
                 clients.remove(websocket)
                 print(f"Cliente removido do PDV {ip}")
+                # Remover o conjunto vazio para economizar memória
+                if len(clients) == 0:
+                    del pdv_clients[ip]
+                    print(f"Conjunto de clientes para o PDV {ip} removido (vazio)")
+                break
 
     # Handlers do WebSocket para PDV
     async def pdv_websocket_handler(self, websocket):

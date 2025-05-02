@@ -69,12 +69,14 @@ class PDVTransaction:
                         "inactive_time": round(inactive_time, 1)
                     }
                     
-                    # Envia para todos os clientes conectados a este PDV
-                    for client in websocket_clients.get(pdv_ip, set()):
-                        try:
-                            await client.send(json.dumps(timeout_message))
-                        except Exception as e:
-                            print(f"Erro ao enviar notificação de timeout: {e}")
+                    # Verifica se o conjunto de clientes para este PDV existe
+                    if pdv_ip in websocket_clients:
+                        # Envia para todos os clientes conectados a este PDV
+                        for client in websocket_clients.get(pdv_ip, set()):
+                            try:
+                                await client.send(json.dumps(timeout_message))
+                            except Exception as e:
+                                print(f"Erro ao enviar notificação de timeout: {e}")
         except asyncio.CancelledError:
             # Tarefa cancelada (normal quando há atividade no PDV)
             pass
