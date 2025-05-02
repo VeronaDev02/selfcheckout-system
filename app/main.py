@@ -29,6 +29,9 @@ class UnifiedServer:
         self.active_rtsp_connections = set()
         self.webrtc_conversions: Dict[str, WebRTCConversion] = {}
         
+        # Rastrear quantos clientes estão usando cada URL RTSP
+        self.rtsp_client_count: Dict[str, int] = {}
+
         # Monitor de transações do PDV
         self.pdv_monitor = PDVTransaction(timeout_seconds=pdv_timeout)
         
@@ -87,12 +90,13 @@ class UnifiedServer:
             del self.webrtc_conversions[rtsp_url]
         
     async def get_or_create_webrtc_conversion(self, rtsp_url):
-        """Obtém uma conversão existente ou cria uma nova"""
-        if rtsp_url not in self.webrtc_conversions:
-            conversion = WebRTCConversion()
+        conversion = WebRTCConversion.get_instance(rtsp_url, downscale_factor=2.0, frame_skip=2, quality_reduce=50)
+        
+        # Conecta apenas se ainda não estiver conectado
+        if not conversion.is_connected:
             await conversion.connect(rtsp_url)
-            self.webrtc_conversions[rtsp_url] = conversion
-        return self.webrtc_conversions[rtsp_url]
+            
+        return conversion
 
     async def rtsp_websocket_handler(self, websocket):
         await self.register_rtsp_client(websocket)
@@ -100,6 +104,9 @@ class UnifiedServer:
             # Primeira mensagem deve ser a URL RTSP
             rtsp_url = await websocket.recv()
             print(f"Recebida URL RTSP: {rtsp_url}")
+
+            # Incrementa o contador de clientes para esta URL
+            self.rtsp_client_count[rtsp_url] = self.rtsp_client_count.get(rtsp_url, 0) + 1
             
             # Obtém ou cria conversão WebRTC
             webrtc_conversion = await self.get_or_create_webrtc_conversion(rtsp_url)
@@ -125,16 +132,19 @@ class UnifiedServer:
                 try:
                     message = await websocket.recv()
                     if message == "CLOSE":
-                        await self.cleanup_conversion(rtsp_url)
                         break
                 except websockets.exceptions.ConnectionClosed:
-                    await self.cleanup_conversion(rtsp_url)
                     break
                     
         except Exception as e:
             print(f"Erro no handler WebSocket RTSP: {e}")
         finally:
             await self.unregister_rtsp_client(websocket)
+            if rtsp_url:
+                self.rtsp_client_count[rtsp_url] = self.rtsp_client_count.get(rtsp_url, 1) - 1
+                if self.rtsp_client_count[rtsp_url] <= 0:
+                    await self.cleanup_conversion(rtsp_url)
+                    self.rtsp_client_count.pop(rtsp_url, None)
 
     # Servidor UDP para recebimento de mensagens do PDV
     async def start_udp_server(self):

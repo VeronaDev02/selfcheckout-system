@@ -130,64 +130,111 @@ class VideoStreamTrack(MediaStreamTrack):
             self.frame_grabber.stop()
 
 class WebRTCConversion:
+    # Dicionário estático para compartilhar instâncias por URL
+    _shared_instances = {}
+    _track_refs = {}  # Contador de referências para tracks
+    
+    @classmethod
+    def get_instance(cls, rtsp_url, **kwargs):
+        """Método para obter uma instância compartilhada ou criar uma nova"""
+        if rtsp_url not in cls._shared_instances:
+            cls._shared_instances[rtsp_url] = WebRTCConversion(**kwargs)
+            cls._track_refs[rtsp_url] = 0
+        return cls._shared_instances[rtsp_url]
+    
+    @classmethod
+    def release_instance(cls, rtsp_url):
+        """Libera a instância se não estiver mais em uso"""
+        if rtsp_url in cls._track_refs:
+            cls._track_refs[rtsp_url] -= 1
+            if cls._track_refs[rtsp_url] <= 0:
+                if rtsp_url in cls._shared_instances:
+                    # Fechamos de forma assíncrona em outro lugar
+                    cls._shared_instances.pop(rtsp_url, None)
+                cls._track_refs.pop(rtsp_url, None)
+    
     def __init__(self, reuse_connection=True, downscale_factor=2.0, frame_skip=2, quality_reduce=50):
-        self.pc = None
+        self.pc_list = []  # Lista de peer connections
         self.rtsp_connection = None
         self.video_track = None
-        self.reuse_connection = reuse_connection  # Flag para reutilização
+        self.reuse_connection = reuse_connection
+        self.rtsp_url = None
         
         # Parâmetros de qualidade
-        self.downscale_factor = downscale_factor  # 2.0 = metade da resolução
-        self.frame_skip = frame_skip              # 2 = metade dos frames
-        self.quality_reduce = quality_reduce      # 0-100 (maior = mais compressão)
+        self.downscale_factor = downscale_factor
+        self.frame_skip = frame_skip
+        self.quality_reduce = quality_reduce
+        self.is_connected = False
 
     async def connect(self, rtsp_url):
         from rtsp_connection import RTSPConnection
         
-        # Se reutilização estiver habilitada, preserva a conexão RTSP
-        if not self.rtsp_connection or not self.reuse_connection:
-            if self.rtsp_connection:
-                self.rtsp_connection.close()
+        self.rtsp_url = rtsp_url
+        
+        if not self.is_connected:
+            # Inicializa a conexão RTSP apenas uma vez
+            if not self.rtsp_connection or not self.reuse_connection:
+                if self.rtsp_connection:
+                    self.rtsp_connection.close()
+                
+                self.rtsp_connection = RTSPConnection(rtsp_url)
+                self.rtsp_connection.connect()
             
-            self.rtsp_connection = RTSPConnection(rtsp_url)
-            self.rtsp_connection.connect()
-        
-        # Criação do peer connection
-        self.pc = RTCPeerConnection()
-        
-        # Adiciona a track de vídeo com qualidade reduzida
-        self.video_track = VideoStreamTrack(
-            self.rtsp_connection,
-            downscale_factor=self.downscale_factor,
-            frame_skip=self.frame_skip,
-            quality_reduce=self.quality_reduce
-        )
-        self.pc.addTrack(self.video_track)
-        
-        print(f"WebRTC conectado e configurado com RTSP: {rtsp_url}")
-        print(f"Otimizações: downscale={self.downscale_factor}x, skip={self.frame_skip} frames, quality={self.quality_reduce}%")
+            # Cria a track de vídeo compartilhada apenas uma vez
+            if not self.video_track:
+                self.video_track = VideoStreamTrack(
+                    self.rtsp_connection,
+                    downscale_factor=self.downscale_factor,
+                    frame_skip=self.frame_skip,
+                    quality_reduce=self.quality_reduce
+                )
+            
+            self.is_connected = True
+            WebRTCConversion._track_refs[rtsp_url] += 1
+            
+            print(f"WebRTC conectado e configurado com RTSP: {rtsp_url}")
+            print(f"Otimizações: downscale={self.downscale_factor}x, skip={self.frame_skip} frames, quality={self.quality_reduce}%")
 
     async def create_offer(self):
-        if not self.pc:
+        if not self.is_connected:
             raise Exception("WebRTC não inicializado. Chame connect() primeiro.")
-            
-        offer = await self.pc.createOffer()
-        await self.pc.setLocalDescription(offer)
-        return self.pc.localDescription
+        
+        # Cria um novo peer connection para cada cliente
+        pc = RTCPeerConnection()
+        # Reutiliza a mesma track de vídeo
+        pc.addTrack(self.video_track)
+        self.pc_list.append(pc)
+        
+        offer = await pc.createOffer()
+        await pc.setLocalDescription(offer)
+        return pc.localDescription
 
     async def process_answer(self, answer):
-        if not self.pc:
-            raise Exception("WebRTC não inicializado. Chame connect() primeiro.")
-            
-        await self.pc.setRemoteDescription(answer)
+        if not self.pc_list:
+            raise Exception("WebRTC não inicializado corretamente.")
+        
+        # Processa a resposta no peer connection mais recente
+        await self.pc_list[-1].setRemoteDescription(answer)
         print("Resposta SDP processada com sucesso")
 
     async def close(self):
-        if self.video_track:
-            self.video_track.stop()
+        # Fecha todos os peer connections
+        for pc in self.pc_list:
+            await pc.close()
+        self.pc_list.clear()
+        
+        # Libera recursos compartilhados se não houver mais referências
+        if self.rtsp_url and self.rtsp_url in WebRTCConversion._track_refs:
+            WebRTCConversion.release_instance(self.rtsp_url)
             
-        if self.rtsp_connection:
-            self.rtsp_connection.close()
-            
-        if self.pc:
-            await self.pc.close()
+            # Só fecha efetivamente se for a última referência
+            if WebRTCConversion._track_refs.get(self.rtsp_url, 0) <= 0:
+                if self.video_track:
+                    self.video_track.stop()
+                    self.video_track = None
+                
+                if self.rtsp_connection:
+                    self.rtsp_connection.close()
+                    self.rtsp_connection = None
+                    
+                self.is_connected = False
