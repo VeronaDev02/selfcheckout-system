@@ -218,9 +218,13 @@ class WebRTCConversion:
         print("Resposta SDP processada com sucesso")
 
     async def close(self):
+        """Fecha conexões WebRTC e libera recursos de forma forçada"""
         # Fecha todos os peer connections
         for pc in self.pc_list:
-            await pc.close()
+            try:
+                await pc.close()
+            except Exception as e:
+                print(f"Erro ao fechar peer connection: {e}")
         self.pc_list.clear()
         
         # Libera recursos compartilhados se não houver mais referências
@@ -229,12 +233,21 @@ class WebRTCConversion:
             
             # Só fecha efetivamente se for a última referência
             if WebRTCConversion._track_refs.get(self.rtsp_url, 0) <= 0:
-                if self.video_track:
-                    self.video_track.stop()
-                    self.video_track = None
-                
-                if self.rtsp_connection:
-                    self.rtsp_connection.close()
-                    self.rtsp_connection = None
+                try:
+                    if self.video_track:
+                        self.video_track.stop()
+                        self.video_track = None
                     
-                self.is_connected = False
+                    if self.rtsp_connection:
+                        self.rtsp_connection.close()
+                        self.rtsp_connection = None
+                        
+                    self.is_connected = False
+                    print(f"Conexão WebRTC para {self.rtsp_url} fechada e recursos liberados")
+                except Exception as e:
+                    print(f"Erro ao liberar recursos WebRTC: {e}")
+                
+                # Forçar a remoção da instância compartilhada
+                if self.rtsp_url in WebRTCConversion._shared_instances:
+                    WebRTCConversion._shared_instances.pop(self.rtsp_url, None)
+                    print(f"Instância de WebRTCConversion para {self.rtsp_url} removida forçadamente")
