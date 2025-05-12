@@ -31,6 +31,7 @@ COPY main.py .
 COPY rtsp_connection.py .
 COPY webrtc_conversion.py .
 COPY message_processor.py .
+COPY pdv_transaction.py .
 
 # Expõe as portas necessárias
 EXPOSE 8765 8080 38800/udp

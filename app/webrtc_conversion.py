@@ -198,13 +198,13 @@ class WebRTCConversion:
     async def create_offer(self):
         if not self.is_connected:
             raise Exception("WebRTC não inicializado. Chame connect() primeiro.")
-        
         # Cria um novo peer connection para cada cliente
-        pc = RTCPeerConnection()
+        from aiortc import RTCConfiguration
+        config = RTCConfiguration(iceServers=[])  # Corrigi a indentação desta linha
+        pc = RTCPeerConnection(configuration=config)
         # Reutiliza a mesma track de vídeo
         pc.addTrack(self.video_track)
         self.pc_list.append(pc)
-        
         offer = await pc.createOffer()
         await pc.setLocalDescription(offer)
         return pc.localDescription
