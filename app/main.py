@@ -4,6 +4,7 @@ import json
 import logging
 import socket
 import time
+import re
 import websockets
 from aiortc import RTCSessionDescription
 from typing import Dict, Set
@@ -17,6 +18,7 @@ pdv_clients = {}
 
 class UnifiedServer:
     def __init__(self, ws_port=8765, rtsp_ws_port=8080, udp_port=38800, pdv_timeout=180):
+
         self.ws_port = ws_port
         self.rtsp_ws_port = rtsp_ws_port
         self.udp_port = udp_port
@@ -30,6 +32,27 @@ class UnifiedServer:
 
         # Monitor de transações do PDV
         self.pdv_monitor = PDVTransaction(timeout_seconds=pdv_timeout)
+        
+        # Configuração do DVR para redirecionamento
+        self.dvr_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            
+    def get_dvr_port_for_pdv(self, pdv_ip):
+        """
+        Calcula a porta do DVR com base no IP do PDV.
+        A porta é 8 + os 3 últimos dígitos do IP do PDV.
+        Ex: 192.168.101.131 -> porta 8131
+        """
+        try:
+            # Extrai o último octeto do IP
+            last_octet = pdv_ip.split('.')[-1]
+            last_octet_padded = last_octet.zfill(3)
+            port = int('8' + last_octet_padded[-3:])
+            
+            return port
+        
+        except Exception as e:
+            print(f"Erro ao calcular porta do DVR para IP {pdv_ip}: {e}")
+            return 8000  # Porta padrão em caso de erro
         
     async def register_pdv_client(self, websocket, pdv_ip):
         """Registra um cliente WebSocket para receber mensagens de um PDV específico"""
@@ -110,7 +133,7 @@ class UnifiedServer:
             
             # Sempre cria uma nova conversão limpa
             print(f"Criando nova conversão WebRTC para {rtsp_url} (Sessão: {session_id})")
-            conversion = WebRTCConversion.get_instance(rtsp_url, downscale_factor=2.0, frame_skip=2, quality_reduce=50)
+            conversion = WebRTCConversion.get_instance(rtsp_url, downscale_factor=3.7, frame_skip=1, quality_reduce=80)
             
             # Conecta a nova conversão
             await conversion.connect(rtsp_url)
@@ -214,9 +237,28 @@ class UnifiedServer:
                 client_ip = addr[0]
                 
                 if data:
-                    # print(f"Dados recebidos de {client_ip}:{addr[1]}")
+                    # Redirecionamento para o DVR conforme configurado
+                    try:
+                        # Calcula a porta de origem com base no PDV
+                        source_port = self.get_dvr_port_for_pdv(client_ip)
+                        
+                        # Cria um novo socket para poder definir a porta de origem
+                        temp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                        # Associa a porta de origem específica
+                        temp_socket.bind(('0.0.0.0', source_port))
+                        
+                        # Envia para o DVR na porta 38800
+                        temp_socket.sendto(data, ('192.168.101.250', 38800))
+                        
+                        print(f"[DVR-RECORDER] Enviado de 192.168.101.140:{source_port} para 192.168.101.250:38800 | Origem PDV: {client_ip}")
+                        
+                        # Fecha o socket temporário
+                        temp_socket.close()
+
+                    except Exception as e:
+                        print(f"Erro ao redirecionar para DVR: {e}")
                     
-                    # Processa a mensagem recebida
+                    # Continua com o processamento normal
                     raw_message = data.decode('utf-8', 'ignore')
                     processed_message = process_message(raw_message, client_ip)
                     
@@ -274,7 +316,7 @@ class UnifiedServer:
         
         # Inicia o servidor WebSocket para RTSP
         rtsp_websocket_server = await websockets.serve(
-            self.rtsp_websocket_handler, 
+            self.rtsp_websocket_handler,
             "0.0.0.0", 
             self.rtsp_ws_port
         )
@@ -293,7 +335,7 @@ class UnifiedServer:
             pdv_websocket_server.wait_closed(),
             rtsp_websocket_server.wait_closed(),
             udp_task,
-            cleanup_task  # Adicione a tarefa de limpeza aqui
+            cleanup_task 
         )
 
 def main():
@@ -308,14 +350,15 @@ def main():
         ws_port=args.ws_port,
         rtsp_ws_port=args.rtsp_ws_port,
         udp_port=args.udp_port,
-        pdv_timeout=args.pdv_timeout
+        pdv_timeout=args.pdv_timeout,
     )
     
     try:
-        # No Python 3.13, precisamos criar e executar o loop explicitamente
         asyncio.run(unified_server.start())
     except KeyboardInterrupt:
         print("Servidor finalizado pelo usuário")
+        if unified_server.dvr_socket:
+            unified_server.dvr_socket.close()
 
 if __name__ == "__main__":
     main()

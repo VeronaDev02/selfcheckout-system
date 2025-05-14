@@ -100,7 +100,6 @@ class PDVTransaction:
         
         # Verifica início de transação
         if self.is_transaction_start(message):
-            # Log apenas de inicialização de transação, silencioso
             # print(f"PDV {pdv_ip}: Início de transação detectado")
             
             # Reinicia o estado e marca como transação ativa
@@ -115,7 +114,6 @@ class PDVTransaction:
             
         # Verifica fim de transação
         elif self.is_transaction_end(message):
-            # Log de finalização de transação, silencioso
             # print(f"PDV {pdv_ip}: Fim de transação detectado")
             
             # Reinicia o estado
@@ -123,7 +121,6 @@ class PDVTransaction:
             
         # Verifica se é uma mensagem de produto (atividade durante transação)
         elif self.pdv_states[pdv_ip]['active_transaction']:
-            # Verifica padrões que indicam leitura de produto
             is_product = False
             
             # Verifica se tem algum padrão de código de barras ou produto
@@ -132,7 +129,6 @@ class PDVTransaction:
                 is_product = True
             
             if is_product:
-                # Log de atividade detectada, removido para ser silencioso
                 # print(f"PDV {pdv_ip}: Atividade detectada durante transação")
                 
                 # Atualiza timestamp de última atividade
