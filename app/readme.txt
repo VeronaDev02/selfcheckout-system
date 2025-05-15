@@ -15,7 +15,7 @@ sudo nano /etc/systemd/system/api.service
 sudo systemctl daemon-reload
 sudo systemctl restart api
 sudo systemctl status api
-which python3.13 - ver onde
+which python3.13
 
 [Unit]
 Description=API
