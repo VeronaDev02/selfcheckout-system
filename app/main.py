@@ -1,4 +1,3 @@
-
 import argparse
 import asyncio
 import json
@@ -182,13 +181,29 @@ class UnifiedServer:
                 print(f"Erro ao limpar conversão WebRTC para {conversion_key}: {e}")
                 self.webrtc_conversions.pop(conversion_key, None)
         
-    async def get_or_create_webrtc_conversion(self, rtsp_url, session_id):
-        """Cria sempre uma nova conversão para cada sessão"""
+    async def get_or_create_webrtc_conversion(self, rtsp_url, session_id, quality_preset="medium"):
+        """Cria sempre uma nova conversão para cada sessão com qualidade ajustável"""
         try:
             conversion_key = f"{rtsp_url}_{session_id}"
             
-            print(f"Criando nova conversão WebRTC para {rtsp_url} (Sessão: {session_id})")
-            conversion = WebRTCConversion.get_instance(rtsp_url, downscale_factor=3.7, frame_skip=1, quality_reduce=80)
+            # Definir presets de qualidade
+            quality_presets = {
+                "low": {"downscale_factor": 4.5, "frame_skip": 2, "quality_reduce": 85},
+                "medium-low": {"downscale_factor": 3.7, "frame_skip": 1, "quality_reduce": 80},
+                "medium": {"downscale_factor": 2.5, "frame_skip": 1, "quality_reduce": 60},
+                "high": {"downscale_factor": 1.5, "frame_skip": 1, "quality_reduce": 30}
+            }
+            
+            # Obter configurações do preset selecionado (ou usar medium-low como padrão se não existir)
+            preset = quality_presets.get(quality_preset, quality_presets["medium-low"])
+            
+            print(f"Criando nova conversão WebRTC para {rtsp_url} (Sessão: {session_id}, Qualidade: {quality_preset})")
+            conversion = WebRTCConversion.get_instance(
+                rtsp_url, 
+                downscale_factor=preset["downscale_factor"], 
+                frame_skip=preset["frame_skip"], 
+                quality_reduce=preset["quality_reduce"]
+            )
             
             await conversion.connect(rtsp_url)
             
@@ -203,17 +218,30 @@ class UnifiedServer:
         rtsp_url = None
         session_id = f"{id(websocket)}_{time.time()}"
         conversion_key = None
+        quality_preset = "medium-low"
         
         await self.register_rtsp_client(websocket)
         
         try:
             rtsp_url = await websocket.recv()
             print(f"Recebida URL RTSP: {rtsp_url} (Sessão: {session_id})")
+            
+            try:
+                quality_data = await asyncio.wait_for(websocket.recv(), timeout=1.0)
+                try:
+                    quality_json = json.loads(quality_data)
+                    if 'quality' in quality_json:
+                        quality_preset = quality_json['quality']
+                        print(f"Recebida configuração de qualidade: {quality_preset} (Sessão: {session_id})")
+                except json.JSONDecodeError:
+                    pass
+            except asyncio.TimeoutError:
+                pass
 
             self.rtsp_client_count[rtsp_url] = self.rtsp_client_count.get(rtsp_url, 0) + 1
             print(f"Clientes conectados para URL {rtsp_url}: {self.rtsp_client_count[rtsp_url]}")
             
-            webrtc_conversion, conversion_key = await self.get_or_create_webrtc_conversion(rtsp_url, session_id)
+            webrtc_conversion, conversion_key = await self.get_or_create_webrtc_conversion(rtsp_url, session_id, quality_preset)
                     
             offer = await webrtc_conversion.create_offer()
             
@@ -226,13 +254,39 @@ class UnifiedServer:
             answer = RTCSessionDescription(sdp=answer_dict["sdp"], type=answer_dict["type"])
             
             await webrtc_conversion.process_answer(answer)
-            print(f"Conexão WebRTC estabelecida para {rtsp_url} (Sessão: {session_id})")
+            print(f"Conexão WebRTC estabelecida para {rtsp_url} (Sessão: {session_id}, Qualidade: {quality_preset})")
             
             while True:
                 try:
                     message = await websocket.recv()
                     if message == "CLOSE":
                         break
+                    elif message.startswith('{"change_quality":'):
+                        try:
+                            quality_json = json.loads(message)
+                            if 'change_quality' in quality_json:
+                                new_quality = quality_json['change_quality']
+                                print(f"Alterando qualidade para: {new_quality} (Sessão: {session_id})")
+                                
+                                if conversion_key in self.webrtc_conversions:
+                                    await self.cleanup_conversion(conversion_key)
+                                
+                                webrtc_conversion, conversion_key = await self.get_or_create_webrtc_conversion(rtsp_url, session_id, new_quality)
+                                
+                                offer = await webrtc_conversion.create_offer()
+                                offer_dict = {"sdp": offer.sdp, "type": offer.type}
+                                await websocket.send(json.dumps(offer_dict))
+                                
+                                answer_json = await websocket.recv()
+                                answer_dict = json.loads(answer_json)
+                                answer = RTCSessionDescription(sdp=answer_dict["sdp"], type=answer_dict["type"])
+                                
+                                await webrtc_conversion.process_answer(answer)
+                                print(f"Conexão WebRTC reestabelecida com nova qualidade: {new_quality} (Sessão: {session_id})")
+                        except json.JSONDecodeError:
+                            print(f"Erro ao analisar mensagem de mudança de qualidade (Sessão: {session_id})")
+                        except Exception as e:
+                            print(f"Erro ao alterar qualidade: {e} (Sessão: {session_id})")
                 except websockets.exceptions.ConnectionClosed:
                     print(f"Conexão fechada para {rtsp_url} (Sessão: {session_id})")
                     break
@@ -248,14 +302,7 @@ class UnifiedServer:
                     print(f"Cliente desconectado da URL {rtsp_url} (Sessão: {session_id}). Clientes restantes: {self.rtsp_client_count[rtsp_url]}")
                     
                     if conversion_key and conversion_key in self.webrtc_conversions:
-                        try:
-                            conversion = self.webrtc_conversions[conversion_key]
-                            await conversion.close()
-                            del self.webrtc_conversions[conversion_key]
-                            print(f"Conversão WebRTC para sessão {session_id} encerrada e removida")
-                        except Exception as e:
-                            print(f"Erro ao limpar conversão para sessão {session_id}: {e}")
-                            self.webrtc_conversions.pop(conversion_key, None)
+                        await self.cleanup_conversion(conversion_key)
                 except Exception as e:
                     print(f"Erro ao decrementar contador RTSP para {rtsp_url}: {e} (Sessão: {session_id})")
 
