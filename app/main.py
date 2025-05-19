@@ -95,24 +95,30 @@ class UnifiedServer:
         self.dvr_sockets = {}
         
         for config in self.selfs_config:
+            pdv_ip = config.get('pdv_ip')
             dvr_ip = config.get('dvr_ip')
             dvr_port = config.get('dvr_port')
-            if dvr_ip and dvr_port:
-                dvr_key = f"{dvr_ip}:{dvr_port}"
+            origin_port = config.get('origin_port')
+
+            if dvr_ip and dvr_port and origin_port:
+                dvr_key = f"{pdv_ip}_{dvr_ip}:{dvr_port}"
                 
-                if dvr_key not in self.dvr_sockets:
-                    try:
-                        dvr_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                        
-                        self.dvr_sockets[dvr_key] = {
-                            'socket': dvr_socket,
-                            'dvr_ip': dvr_ip,
-                            'dvr_port': int(dvr_port)
-                        }
-                        
-                        print(f"Socket de envio configurado para DVR {dvr_ip}:{dvr_port}")
-                    except Exception as e:
-                        print(f"Erro ao configurar socket para DVR {dvr_key}: {e}")
+                try:
+                    dvr_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    
+                    dvr_socket.bind(('0.0.0.0', int(origin_port)))
+
+                    self.dvr_sockets[dvr_key] = {
+                        'socket': dvr_socket,
+                        'dvr_ip': dvr_ip,
+                        'dvr_port': int(dvr_port),
+                        'pdv_ip': pdv_ip,
+                        'origin_port': int(origin_port)
+                    }
+                    
+                    print(f"Socket de envio configurado para DVR {dvr_ip}:{dvr_port} com origem na porta {origin_port} para PDV {pdv_ip}")
+                except Exception as e:
+                    print(f"Erro ao configurar socket para DVR {dvr_key}: {e}")
     
     async def register_pdv_client(self, websocket, pdv_ip):
         if pdv_ip not in pdv_clients:
@@ -265,7 +271,8 @@ class UnifiedServer:
         
         dvr_ip = config.get('dvr_ip')
         dvr_port = config.get('dvr_port')
-        dvr_key = f"{dvr_ip}:{dvr_port}"
+
+        dvr_key = f"{pdv_ip}_{dvr_ip}:{dvr_port}"
         
         print(f"Iniciando escuta para PDV {pdv_ip}:{pdv_port}")
         
@@ -279,10 +286,12 @@ class UnifiedServer:
                     print(f"[PDV-RECV] Recebido {len(data)} bytes de {client_ip}:{client_port}")
                     
                     try:
+                        # Usa o socket específico vinculado à porta de origem correta para este PDV
                         if dvr_key in self.dvr_sockets:
                             dvr_socket = self.dvr_sockets[dvr_key]['socket']
+                            origin_port = self.dvr_sockets[dvr_key]['origin_port']
                             dvr_socket.sendto(data, (dvr_ip, int(dvr_port)))
-                            print(f"[DVR-SEND] Enviado de {client_ip}:{client_port} para {dvr_ip}:{dvr_port}")
+                            print(f"[DVR-SEND] Enviado de {client_ip}:{client_port} (origem: porta {origin_port}) para {dvr_ip}:{dvr_port}")
                         else:
                             print(f"Socket DVR não encontrado para {dvr_key}")
                     except Exception as e:
